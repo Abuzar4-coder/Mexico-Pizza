@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Mexico Pizza — Admin Panel</title>
+<meta name="theme-color" content="#241A14">
+<link rel="manifest" href="manifest-admin.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   STANDALONE TEST BUILD — no Firebase yet. Reads/writes the
+   same localStorage keys as the Customer App and Kitchen Page,
+   so if you serve all three from the same local server/folder
+   you'll see live updates flow between them. Once Firebase is
+   wired in, this same Store interface gets swapped to Firestore
+   and everything keeps working the same way.
+   ============================================================ */
+:root{
+  --red:#E8341C; --red-deep:#B71F0E; --orange:#FF7A1A; --gold:#FFC400;
+  --ink:#241A14; --ink-soft:#8A7568; --paper:#FFFFFF; --bg:#FFF8F2; --line:#F1E3D4;
+  --green-ok:#1F8A4C; --green-ok-bg:#E8F7EE;
+  --radius:16px; --radius-sm:11px;
+  --shadow:0 4px 16px rgba(36,26,20,0.08); --shadow-lift:0 12px 28px rgba(36,26,20,0.16);
+  --grad-cta:linear-gradient(135deg,var(--orange) 0%,var(--red) 70%);
+  --grad-hero:linear-gradient(120deg,#1c1410 0%,#241A14 60%,#3a2a1f 100%);
+  --safe-bottom:env(safe-area-inset-bottom,0px); --safe-top:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
+h1,h2,h3,.display{font-family:'Poppins',sans-serif;}
+button{font-family:inherit;cursor:pointer;}
+input,textarea,select{font-family:inherit;}
+.hidden{display:none!important;}
+img{max-width:100%;display:block;}
+::-webkit-scrollbar{display:none;}
+#app{max-width:600px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;padding-bottom:calc(64px + var(--safe-bottom));display:flex;flex-direction:column;}
+
+.devbanner{background:#1c1410;color:#FFD7A8;font-size:11px;font-weight:700;text-align:center;padding:6px 10px;}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:30;background:var(--grad-hero);padding:calc(10px + var(--safe-top)) 14px 12px;color:#fff;}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.brand{display:flex;align-items:center;gap:9px;}
+.brand-mark{width:36px;height:36px;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;color:var(--red);font-size:13px;}
+.brand-name{font-family:'Poppins';font-weight:700;font-size:15.5px;}
+.role-badge{font-size:10.5px;font-weight:800;background:var(--gold);color:#3a2400;padding:4px 9px;border-radius:20px;}
+.logout-btn{background:rgba(255,255,255,0.16);border:none;color:#fff;border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700;}
+
+.view{padding:14px 14px 100px;flex:1;}
+.view.hidden{display:none;}
+.section-title{font-family:'Poppins';font-size:19px;font-weight:700;margin:6px 0 12px;}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:var(--red);margin-bottom:2px;}
+
+.chip-row{display:flex;gap:8px;overflow-x:auto;margin:0 -14px;padding:2px 14px 12px;}
+.chip{flex-shrink:0;padding:8px 14px;border-radius:30px;border:none;background:var(--paper);font-weight:700;font-size:12.5px;color:var(--ink-soft);white-space:nowrap;box-shadow:var(--shadow);}
+.chip.active{background:var(--grad-cta);color:#fff;}
+.chip .cnt{margin-left:5px;opacity:0.85;}
+
+.card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px;}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.muted{color:var(--ink-soft);font-size:12px;}
+.empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+.empty-state .ee{font-size:40px;margin-bottom:8px;}
+.empty-state h3{font-family:'Poppins';color:var(--ink);margin:0 0 4px;font-size:15px;}
+.empty-state p{font-size:12.5px;margin:0;}
+
+/* order card */
+.order-card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:13px;}
+.order-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.order-type{font-weight:800;font-size:14px;}
+.order-id{font-size:10.5px;color:var(--ink-soft);}
+.status-pill{display:inline-block;font-size:10.5px;font-weight:800;padding:5px 10px;border-radius:20px;white-space:nowrap;}
+.status-pill.warn{background:#FFF1DD;color:#9A6300;}
+.status-pill.ok{background:var(--green-ok-bg);color:var(--green-ok);}
+.status-pill.danger{background:#FCE6E2;color:var(--red-deep);}
+.status-pill.info{background:#E9F1FF;color:#1d5fb8;}
+.cust-block{background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin:8px 0;font-size:12.5px;line-height:1.5;}
+.items-block{margin:8px 0;font-size:13px;}
+.item-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line);}
+.item-row:last-child{border-bottom:none;}
+.totals-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--ink-soft);}
+.totals-row.grand{font-weight:800;color:var(--ink);font-size:14.5px;border-top:1px dashed var(--line);margin-top:4px;padding-top:8px;}
+.totals-row.grand span:last-child{color:var(--red-deep);}
+.order-actions{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.inline-input-row{display:flex;gap:8px;margin-top:8px;}
+.inline-input-row input{flex:1;border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:10px;font-size:14px;}
+.cancel-link{text-align:center;display:block;margin-top:8px;font-size:12px;color:var(--ink-soft);text-decoration:underline;background:none;border:none;width:100%;padding:4px;}
+
+/* buttons */
+.btn{display:block;width:100%;border:none;border-radius:30px;padding:12px;font-weight:800;font-size:13.5px;text-align:center;}
+.btn-primary{background:var(--grad-cta);color:#fff;box-shadow:0 6px 14px rgba(232,52,28,0.28);}
+.btn-secondary{background:#FFF1E6;color:var(--red-deep);}
+.btn-dark{background:var(--ink);color:#fff;}
+.btn-ghost{background:transparent;color:var(--ink-soft);text-decoration:underline;font-weight:600;}
+.btn-sm{padding:8px;font-size:12px;}
+.btn-outline{background:transparent;border:1.5px solid var(--line);color:var(--ink);}
+
+.fab{position:fixed;right:18px;bottom:calc(78px + var(--safe-bottom));max-width:600px;z-index:50;background:var(--grad-cta);color:#fff;border:none;border-radius:30px;padding:13px 20px;font-weight:800;font-size:13.5px;box-shadow:var(--shadow-lift);}
+
+/* bottom nav */
+.bottomnav{position:fixed;left:0;right:0;bottom:0;max-width:600px;margin:0 auto;background:var(--paper);border-top:1px solid var(--line);display:flex;z-index:40;padding-bottom:var(--safe-bottom);}
+.nav-btn{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;color:var(--ink-soft);font-size:10px;font-weight:700;}
+.nav-btn .ni{font-size:17px;}
+.nav-btn.active{color:var(--red-deep);}
+.nav-btn .nbadge{position:absolute;margin-left:14px;margin-top:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+
+/* forms */
+.field{margin-bottom:13px;}
+.field label{display:block;font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;}
+.field input,.field textarea,.field select{width:100%;border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:11px;font-size:14px;background:var(--paper);color:var(--ink);}
+.field textarea{resize:vertical;min-height:54px;}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--red);}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;}
+.switch{position:relative;width:42px;height:24px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;inset:0;background:var(--line);border-radius:24px;transition:0.15s;}
+.slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.15s;}
+input:checked + .slider{background:var(--green-ok);}
+input:checked + .slider::before{transform:translateX(18px);}
+.list-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);}
+.list-row:last-child{border-bottom:none;}
+.list-row-main{flex:1;min-width:0;}
+.list-row-main .lt{font-weight:700;font-size:13.5px;}
+.list-row-main .ls{font-size:11.5px;color:var(--ink-soft);}
+.icon-btn-sm{background:var(--bg);border:none;border-radius:9px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.size-edit-row{display:flex;gap:6px;margin-bottom:8px;align-items:center;}
+.size-edit-row input{flex:1;}
+.removeRowBtn{background:#FCE6E2;color:var(--red-deep);border:none;border-radius:8px;width:30px;height:30px;flex-shrink:0;}
+.dealitem-row{display:flex;gap:6px;margin-bottom:8px;align-items:center;}
+.dealitem-row input[type=text]{flex:2;}
+.dealitem-row input[type=number]{flex:0 0 54px;}
+
+.table-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:6px;}
+.table-cell{aspect-ratio:1;border-radius:11px;border:2px solid var(--line);background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:12px;position:relative;}
+.table-cell.free{border-color:var(--green-ok);color:#136336;}
+.table-cell.occupied{border-color:var(--line);background:#F2EAE0;color:var(--ink-soft);}
+.table-cell.reserved{border-color:var(--gold);color:#8a6312;background:#FFF7E0;}
+.table-cell .ts{font-size:8.5px;font-weight:700;text-transform:uppercase;margin-top:1px;}
+.table-cell .delx{position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;width:18px;height:18px;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;border:none;}
+
+/* overlays */
+.overlay{position:fixed;inset:0;background:rgba(36,26,20,0.55);z-index:90;display:flex;align-items:flex-end;justify-content:center;}
+.overlay.hidden{display:none;}
+.sheet{background:var(--bg);width:100%;max-width:600px;border-radius:22px 22px 0 0;max-height:92vh;display:flex;flex-direction:column;}
+.sheet-handle{width:40px;height:4px;background:var(--line);border-radius:4px;margin:10px auto 4px;}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;padding:6px 18px 12px;border-bottom:1px solid var(--line);}
+.sheet-head h3{margin:0;font-size:16px;font-family:'Poppins';}
+.sheet-close{background:none;border:none;font-size:20px;color:var(--ink-soft);}
+.sheet-body{overflow-y:auto;padding:16px 18px;flex:1;}
+.sheet-foot{padding:12px 18px calc(12px + var(--safe-bottom));border-top:1px solid var(--line);background:var(--bg);display:flex;gap:10px;}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:30px;font-size:12.5px;font-weight:600;z-index:150;box-shadow:var(--shadow-lift);max-width:86%;text-align:center;}
+
+/* login screen */
+#loginScreen{position:fixed;inset:0;background:var(--grad-hero);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;}
+#loginScreen .lmark{width:64px;height:64px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;color:var(--red);font-size:22px;margin-bottom:8px;}
+#loginScreen h1{font-size:20px;margin:6px 0 2px;}
+#loginScreen p{color:#cbb8ac;font-size:12.5px;margin:0 0 26px;text-align:center;}
+.role-card{width:100%;max-width:300px;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.18);border-radius:16px;padding:18px;text-align:center;margin-bottom:12px;}
+.role-card .ri{font-size:26px;margin-bottom:6px;display:block;}
+.role-card h4{margin:0 0 3px;font-family:'Poppins';font-size:15px;}
+.role-card p{margin:0;font-size:11.5px;color:#cbb8ac;}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="lmark">MP</div>
+  <h1>Mexico Pizza — Admin</h1>
+  <p>🧪 Test build — no real password yet, that arrives with Firebase.<br>Pick a role to continue.</p>
+  <div class="role-card" onclick="login('owner')"><span class="ri">👑</span><h4>Continue as Owner</h4><p>Full access — menu, deals, tables, promos, orders</p></div>
+  <div class="role-card" onclick="login('staff')"><span class="ri">🧑‍💼</span><h4>Continue as Staff</h4><p>Orders only — confirm, set delivery charge, cancel</p></div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="devbanner">🧪 Local test build — syncs with Customer/Kitchen apps only when served from the same address.</div>
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand"><div class="brand-mark">MP</div><div class="brand-name">Admin Panel</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="role-badge" id="roleBadge">OWNER</span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="view" id="view-orders">
+    <div class="eyebrow">Live</div>
+    <h2 class="section-title" style="margin-top:0">Orders</h2>
+    <div class="chip-row" id="orderFilterChips"></div>
+    <div id="ordersList"></div>
+  </div>
+
+  <div class="view hidden" id="view-menu">
+    <div class="eyebrow">Manage</div>
+    <h2 class="section-title" style="margin-top:0">Menu</h2>
+    <div class="chip-row" id="menuCategoryChips"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-outline btn-sm" style="flex:1" onclick="openCategoryForm()">+ Category</button>
+      <button class="btn btn-outline btn-sm" style="flex:1" onclick="openProductForm(null)">+ Product</button>
+    </div>
+    <div id="menuProductList"></div>
+  </div>
+
+  <div class="view hidden" id="view-deals">
+    <div class="eyebrow">Manage</div>
+    <h2 class="section-title" style="margin-top:0">Deals</h2>
+    <button class="btn btn-outline btn-sm" style="margin-bottom:12px" onclick="openDealForm(null)">+ Add Deal</button>
+    <div id="dealsAdminList"></div>
+  </div>
+
+  <div class="view hidden" id="view-tables">
+    <div class="eyebrow">Manage</div>
+    <h2 class="section-title" style="margin-top:0">Tables &amp; Reservations</h2>
+    <div class="chip-row" id="tablesHallChips"></div>
+    <div style="display:flex;gap:8px;margin:6px 0 4px">
+      <button class="btn btn-outline btn-sm" style="flex:1" onclick="addHallPrompt()">+ Add Hall</button>
+      <button class="btn btn-outline btn-sm" style="flex:1" onclick="addTableToHall()">+ Add Table</button>
+    </div>
+    <div class="table-grid" id="adminTableGrid"></div>
+    <h3 class="section-title" style="font-size:16px">Reservation Requests</h3>
+    <div id="reservationsList"></div>
+  </div>
+
+  <div class="view hidden" id="view-promos">
+    <div class="eyebrow">Manage</div>
+    <h2 class="section-title" style="margin-top:0">Promo Media</h2>
+    <button class="btn btn-outline btn-sm" style="margin-bottom:12px" onclick="openMediaForm()">+ Add Photo / Video</button>
+    <div id="mediaAdminList"></div>
+  </div>
+
+  <button class="fab hidden" id="fabOrders" onclick="switchTab('orders')">🧾 New Orders</button>
+
+  <div class="bottomnav" id="bottomnav">
+    <button class="nav-btn active" data-tab="orders" onclick="switchTab('orders')"><span class="ni">🧾</span>Orders</button>
+    <button class="nav-btn owner-only" data-tab="menu" onclick="switchTab('menu')"><span class="ni">🍕</span>Menu</button>
+    <button class="nav-btn owner-only" data-tab="deals" onclick="switchTab('deals')"><span class="ni">🔥</span>Deals</button>
+    <button class="nav-btn owner-only" data-tab="tables" onclick="switchTab('tables')"><span class="ni">🪑</span>Tables</button>
+    <button class="nav-btn owner-only" data-tab="promos" onclick="switchTab('promos')"><span class="ni">🎬</span>Promos</button>
+  </div>
+</div>
+
+<!-- generic form sheet, reused for product/category/deal/media forms -->
+<div class="overlay hidden" id="formOverlay">
+  <div class="sheet" style="max-height:94vh">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3 id="formTitle">Add</h3><button class="sheet-close" onclick="closeForm()">✕</button></div>
+    <div class="sheet-body" id="formBody"></div>
+    <div class="sheet-foot">
+      <button class="btn btn-ghost" style="width:auto;flex:1" onclick="closeForm()">Cancel</button>
+      <button class="btn btn-primary" style="flex:2" id="formSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Same default seed data + Store pattern as the Customer App —
+   identical keys, so they share data when served from one origin.
+   ============================================================ */
+const REG_SIZES = ()=>[{label:'Small',price:550,toppingPrice:90},{label:'Medium',price:1049,toppingPrice:120},{label:'Large',price:1299,toppingPrice:150},{label:'XL',price:1999,toppingPrice:250}];
+const SPECIAL_SIZES = ()=>[{label:'Small',price:649,toppingPrice:149},{label:'Medium',price:1149,toppingPrice:199},{label:'Large',price:1399,toppingPrice:249},{label:'XL',price:2199,toppingPrice:299}];
+const DEFAULT_CATEGORIES = [
+  {id:'pizza-regular', name:'Regular Pizza', group:'pizza-regular', sortOrder:1},
+  {id:'pizza-special', name:'Special Pizza', group:'pizza-special', sortOrder:2},
+  {id:'burgers', name:'Burgers', group:'burger', sortOrder:3},
+  {id:'wings-nuggets', name:'Wings & Nuggets', group:'wings', sortOrder:4},
+  {id:'pasta-sides', name:'Pasta & Sides', group:'pasta', sortOrder:5},
+];
+let pid=0; const nid=()=>'p'+(++pid);
+const DEFAULT_PRODUCTS = [
+  ...[['Chicken Fajita','Chicken, tomato sauce, bell peppers & pineapple'],['Chicken Tikka','Chicken, tomato sauce, bell peppers, onion & sausage'],['Chicken Bar.B.Q','Chicken, tomato sauce, bell peppers & onions'],['Cheese Lovers','Melted layers of cheese and special sauces'],['The Euro','Chicken, tomato sauce, onion, bell peppers & sausage'],['Hawaiian Pizza','Chicken, tomato sauce, bell peppers & pineapple'],['The Milano','Chicken, special sauce, bell peppers & mushrooms'],['Pizza Osago','Chicken, special sauces, bell peppers, olives & mushrooms'],['Achari Pizza','Achari chicken, onion, bell peppers, olives & special sauces'],['Vegetarian Pizza','Veggie sauce, onions, tomatoes, sweet corn & mushrooms'],['Hot & Spicy Pizza','Spicy chicken, onion, tomato & mix peppers']]
+    .map(([name,description],i)=>({id:nid(),categoryId:'pizza-regular',categoryGroup:'pizza-regular',name,description,sizes:REG_SIZES(),available:true,icon:'🍕',badge:i===5?'⭐ Bestseller':(i===10?'🔥 Spicy':null)})),
+  ...[['Mexico Special','Chicken, cheese, crust with kebabs and all veges'],['Supreme Special','Chicken, cheese, bell pepper, tomatoes, olives & special sauces'],['Malai Boti Pizza','Malai boti chicken, cheese, sweet corn & bell peppers'],['Fajita Siclian','Chicken, cheese, bell peppers, jalapeno & olives'],['Bihari Kebab Pizza','Chicken, cheese, kebab and all the veges'],['Lazania Pizza','Chicken, cheese, kebab and all the veges'],['Chicken Extreme','Chicken, cheese, bell peppers with special sauces'],['Square Pizza','Chicken, cheese, all the veges & special sauces']]
+    .map(([name,description],i)=>({id:nid(),categoryId:'pizza-special',categoryGroup:'pizza-special',name,description,sizes:SPECIAL_SIZES(),available:true,icon:'🍕',badge:i===0?'⭐ Bestseller':null})),
+  {id:nid(),categoryId:'pizza-special',categoryGroup:'pizza-special',name:'Chicken Stuffed',description:'Chicken at the top and in the edges of the pizza with veges',price:1599,available:true,icon:'🍕'},
+  {id:nid(),categoryId:'pizza-special',categoryGroup:'pizza-special',name:'Kebab Stuffed',description:'Chicken, kebab in the edges, tomatoes, bell pepper & olives',price:1599,available:true,icon:'🍕'},
+  {id:nid(),categoryId:'pizza-special',categoryGroup:'pizza-special',name:'Your Name Pizza',description:'Add your name to the pizza with your choice of flavour',price:0,available:false,needsPriceReview:true,icon:'🍕'},
+  ...[['Zinger Burger Jambo',380],['Black Zinger Burger',400],['Red Zinger Burger',400],['Zinger Tower Burger',600],['Zinger Burger (Cheese)',450],['Chicken Burger',330],['Chicken Burger (Cheese)',350],['Chapli Burger',350],['Chapli Burger (Cheese)',400]]
+    .map(([name,price],i)=>({id:nid(),categoryId:'burgers',categoryGroup:'burger',name,price,available:true,icon:'🍔',badge:i===0?'⭐ Bestseller':null})),
+  ...[['Hot Wings',[['6 pc',350],['12 pc',600]]],['Oven Baked Wings',[['6 pc',350],['12 pc',650]]],['Bar B.Q Wings',[['6 pc',350],['12 pc',650]]],['Nuggets',[['6 pc',350],['12 pc',630]]]]
+    .map(([name,sizes])=>({id:nid(),categoryId:'wings-nuggets',categoryGroup:'wings',name,sizes:sizes.map(([label,price])=>({label,price})),available:true,icon:'🍗'})),
+  ...[['Medium Fries',300],['Large Fries',400],['Cheesy Fries',600],['Cremey Fries',400]]
+    .map(([name,price])=>({id:nid(),categoryId:'wings-nuggets',categoryGroup:'wings',name,price,available:true,icon:'🍟'})),
+  ...[['Mexico Special Pasta',[['Half',350],['Full',650]]],['Crunchy Pasta',[['Half',400],['Full',750]]],['Veges Pasta',[['Half',300],['Full',600]]]]
+    .map(([name,sizes])=>({id:nid(),categoryId:'pasta-sides',categoryGroup:'pasta',name,sizes:sizes.map(([label,price])=>({label,price})),available:true,icon:'🍝'})),
+  {id:nid(),categoryId:'pasta-sides',categoryGroup:'pasta',name:'Cheese Stick',sizes:[{label:'Small',price:600},{label:'Large',price:999}],available:true,icon:'🧀'},
+  {id:nid(),categoryId:'pasta-sides',categoryGroup:'pasta',name:'Loaded Fries',sizes:[{label:'Half',price:350},{label:'Full',price:650}],available:true,icon:'🍟'},
+  {id:'paratha-roll',categoryId:'rolls-shawarma',categoryGroup:'rolls',name:'Paratha Roll',price:0,available:false,needsPriceReview:true,icon:'🌯'},
+  {id:'chicken-shawarma',categoryId:'rolls-shawarma',categoryGroup:'rolls',name:'Chicken Shawarma',price:0,available:false,needsPriceReview:true,icon:'🌯'},
+];
+const DEFAULT_DEALS = [
+  {id:'d1',name:'Deal 1',price:599,active:true,items:[{label:'1 Paratha Roll',qty:1},{label:'1 Chicken Burger',qty:1},{label:'1 500ml Drink',qty:1}]},
+  {id:'d2',name:'Deal 2',price:649,active:true,items:[{label:'1 Zinger Burger',qty:1},{label:'1 Chicken Shawarma',qty:1},{label:'1 500ml Drink',qty:1}]},
+  {id:'d3',name:'Deal 3',price:849,active:true,items:[{label:'1 Zinger Burger',qty:1},{label:'1 Paratha Roll',qty:1},{label:'1 Chicken Shawarma',qty:1},{label:'1 500ml Drink',qty:1}]},
+  {id:'d4',name:'Deal 4',price:799,active:true,items:[{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 Paratha Roll',qty:1},{label:'1 500ml Drink',qty:1}]},
+  {id:'d5',name:'Deal 5',price:599,active:true,ribbon:'🔥 Popular',items:[{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 500ml Drink',qty:1}]},
+  {id:'d6',name:'2 Small Pizza Deal',price:999,active:true,items:[{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 Small Pizza',qty:1,chooseFlavor:true}]},
+  {id:'d7',name:'Deal 7',price:1649,active:true,items:[{label:'1 Medium Pizza',qty:1,chooseFlavor:true},{label:'1 Zinger Burger',qty:1},{label:'1 Chicken Shawarma',qty:1},{label:'1.5 Ltr Drink',qty:1}]},
+  {id:'d8',name:'Deal 8',price:1999,active:true,items:[{label:'1 Large Pizza',qty:1,chooseFlavor:true},{label:'12 Hot Wings',qty:1},{label:'1.5 Ltr Drink',qty:1}]},
+  {id:'d9',name:'Deal 9',price:1449,active:true,items:[{label:'1 Large Pizza',qty:1,chooseFlavor:true},{label:'1 Ltr Drink',qty:1}]},
+  {id:'d10',name:'Deal 10',price:1599,active:true,items:[{label:'1 Medium Pizza',qty:1,chooseFlavor:true},{label:'6 Hot Wings',qty:1},{label:'Regular Fries',qty:1},{label:'1 Ltr Drink',qty:1}]},
+  {id:'d11',name:'Deal 11',price:1499,active:true,items:[{label:'4 Zinger Burger',qty:4},{label:'1 Ltr Drink',qty:1}]},
+  {id:'d12',name:'2 Medium Pizza Deal',price:1799,active:true,items:[{label:'1 Medium Pizza',qty:1,chooseFlavor:true},{label:'1 Medium Pizza',qty:1,chooseFlavor:true}]},
+  {id:'big1',name:'Big Deal 1',price:2799,active:true,ribbon:'🔥 Best Value',items:[{label:'1 Large Pizza',qty:1,chooseFlavor:true},{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 Zinger Burger',qty:1},{label:'1 Chicken Burger',qty:1},{label:'1 Paratha Roll',qty:1},{label:'1.5 Ltr Drink',qty:1}]},
+  {id:'big2',name:'Big Deal 2',price:4699,active:true,items:[{label:'2 Large Pizza',qty:2,chooseFlavor:true},{label:'2 Zinger Burger',qty:2},{label:'2 Chicken Burger',qty:2},{label:'2 Chicken Shawarma',qty:2},{label:'2 Paratha Roll',qty:2},{label:'1.5 Ltr Drink',qty:1}]},
+  {id:'family',name:'Family Deal',price:6199,active:true,ribbon:'👨‍👩‍👧 Family Favorite',items:[{label:'3 Large Pizza',qty:3,chooseFlavor:true},{label:'12 Hot Wings',qty:1},{label:'4 Zinger Burger',qty:4},{label:'1 Regular Fries',qty:1},{label:'2 x 1.5 Ltr Drink',qty:2}]},
+  {id:'deal6fam',name:'Large + Small Pizza',price:1799,active:true,items:[{label:'1 Large Pizza',qty:1,chooseFlavor:true},{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 Ltr Drink',qty:1}]},
+  {id:'midnight',name:'Mid Night Deal',price:2499,active:true,ribbon:'🌙 Late Night',items:[{label:'2 Large Pizza',qty:2,chooseFlavor:true},{label:'1.5 Ltr Drink',qty:1}]},
+];
+const DEFAULT_TABLES = [
+  ...Array.from({length:10},(_,i)=>({id:'g'+(i+1),hall:'Gents',number:i+1,status:i===2?'occupied':(i===6?'reserved':'free')})),
+  ...Array.from({length:8},(_,i)=>({id:'f'+(i+1),hall:'Family',number:i+1,status:i===1?'occupied':'free'})),
+];
+const DEFAULT_MEDIA = [];
+
+const LS = {
+  get(k,d){ try{ const v=localStorage.getItem('mp_'+k); return v?JSON.parse(v):d; }catch(e){return d;} },
+  set(k,v){ try{ localStorage.setItem('mp_'+k, JSON.stringify(v)); }catch(e){} }
+};
+function uid8(){ return Math.random().toString(36).slice(2,10); }
+function money(n){ return 'Rs '+Math.round(n).toLocaleString('en-PK'); }
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2300); }
+function timeAgo(ts){
+  if(!ts) return '';
+  const s = Math.floor((Date.now()-ts)/1000);
+  if(s<60) return s+'s ago';
+  if(s<3600) return Math.floor(s/60)+'m ago';
+  if(s<86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+
+const Store = (function(){
+  function seedIfEmpty(key, defaults){ if(LS.get(key,null)===null) LS.set(key, defaults); }
+  seedIfEmpty('categories', DEFAULT_CATEGORIES);
+  seedIfEmpty('products', DEFAULT_PRODUCTS);
+  seedIfEmpty('deals', DEFAULT_DEALS);
+  seedIfEmpty('tables', DEFAULT_TABLES);
+  seedIfEmpty('media', DEFAULT_MEDIA);
+  seedIfEmpty('orders', []);
+  seedIfEmpty('reservations', []);
+  return {
+    getCategories(){ return Promise.resolve(LS.get('categories', DEFAULT_CATEGORIES)); },
+    saveCategories(list){ LS.set('categories', list); return Promise.resolve(list); },
+    getProducts(){ return Promise.resolve(LS.get('products', DEFAULT_PRODUCTS)); },
+    saveProducts(list){ LS.set('products', list); return Promise.resolve(list); },
+    getDeals(){ return Promise.resolve(LS.get('deals', DEFAULT_DEALS)); },
+    saveDeals(list){ LS.set('deals', list); return Promise.resolve(list); },
+    getTables(){ return Promise.resolve(LS.get('tables', DEFAULT_TABLES)); },
+    saveTables(list){ LS.set('tables', list); return Promise.resolve(list); },
+    getMedia(){ return Promise.resolve(LS.get('media', DEFAULT_MEDIA)); },
+    saveMedia(list){ LS.set('media', list); return Promise.resolve(list); },
+    getOrders(){ return Promise.resolve(LS.get('orders', [])); },
+    updateOrder(id, patch){
+      const orders = LS.get('orders', []);
+      const o = orders.find(x=>x.id===id);
+      if(o) Object.assign(o, patch);
+      LS.set('orders', orders);
+      return Promise.resolve(o);
+    },
+    getReservations(){ return Promise.resolve(LS.get('reservations', [])); },
+    updateReservation(id, patch){
+      const list = LS.get('reservations', []);
+      const r = list.find(x=>x.id===id);
+      if(r) Object.assign(r, patch);
+      LS.set('reservations', list);
+      return Promise.resolve(r);
+    }
+  };
+})();
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = { role:null, orderFilter:'new', categories:[], products:[], deals:[], tables:[], media:[], orders:[], reservations:[], menuActiveCatId:null, tablesActiveHall:null };
+
+const STATUS_FLOW = {
+  awaiting_confirmation:{label:'Awaiting Confirmation'}, awaiting_payment:{label:'Awaiting Payment'},
+  payment_submitted:{label:'Payment Submitted'}, confirmed:{label:'Confirmed'}, preparing:{label:'Preparing'},
+  ready:{label:'Ready'}, out_for_delivery:{label:'Out for Delivery'}, served:{label:'Served'},
+  ready_for_pickup:{label:'Ready for Pickup'}, completed:{label:'Completed'}, cancelled:{label:'Cancelled'}
+};
+const NEW_STATUSES = ['awaiting_confirmation','awaiting_payment','payment_submitted'];
+const ACTIVE_STATUSES = ['confirmed','preparing','ready','out_for_delivery'];
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+function login(role){
+  state.role = role; LS.set('adminRole', role);
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('roleBadge').textContent = role.toUpperCase();
+  document.querySelectorAll('.owner-only').forEach(el=>el.style.display = role==='owner' ? '' : 'none');
+  bootstrap();
+}
+function logout(){ LS.set('adminRole', null); location.reload(); }
+(function(){ const r=LS.get('adminRole',null); if(r) login(r); })();
+
+/* ============================================================
+   BOOTSTRAP + LIVE SYNC
+   ============================================================ */
+function bootstrap(){
+  refreshAll();
+  switchTab('orders');
+  window.addEventListener('storage', (e)=>{
+    if(!e.key || e.key.indexOf('mp_')!==0) return;
+    refreshAll();
+  });
+  setInterval(refreshAll, 4000); // catch same-tab/same-device updates too
+}
+function refreshAll(){
+  Promise.all([Store.getCategories(),Store.getProducts(),Store.getDeals(),Store.getTables(),Store.getMedia(),Store.getOrders(),Store.getReservations()])
+    .then(([cats,prods,deals,tables,media,orders,res])=>{
+      state.categories=cats; state.products=prods; state.deals=deals; state.tables=tables; state.media=media; state.orders=orders; state.reservations=res;
+      if(!state.menuActiveCatId) state.menuActiveCatId = cats[0]?cats[0].id:null;
+      if(!state.tablesActiveHall) state.tablesActiveHall = tables[0]?tables[0].hall:'Gents';
+      renderOrders(); renderMenuCategoryChips(); renderMenuProducts(); renderDealsAdmin(); renderTablesHallChips(); renderAdminTableGrid(); renderReservations(); renderMediaAdmin();
+    });
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(tab){
+  document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+  document.getElementById('view-'+tab).classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+}
+
+/* ============================================================
+   ORDERS TAB
+   ============================================================ */
+function renderOrders(){
+  const counts = { new: state.orders.filter(o=>NEW_STATUSES.includes(o.status)).length,
+                   active: state.orders.filter(o=>ACTIVE_STATUSES.includes(o.status)).length,
+                   completed: state.orders.filter(o=>o.status==='completed').length,
+                   cancelled: state.orders.filter(o=>o.status==='cancelled').length,
+                   all: state.orders.length };
+  const chipsDef = [['new','New'],['active','In Progress'],['completed','Completed'],['cancelled','Cancelled'],['all','All']];
+  document.getElementById('orderFilterChips').innerHTML = chipsDef.map(([k,label])=>
+    `<button class="chip ${state.orderFilter===k?'active':''}" onclick="setOrderFilter('${k}')">${label}<span class="cnt">${counts[k]}</span></button>`).join('');
+  const fab = document.getElementById('fabOrders');
+  fab.classList.toggle('hidden', counts.new===0 || state.orderFilter==='new');
+
+  let list = state.orders;
+  if(state.orderFilter==='new') list = list.filter(o=>NEW_STATUSES.includes(o.status));
+  else if(state.orderFilter==='active') list = list.filter(o=>ACTIVE_STATUSES.includes(o.status));
+  else if(state.orderFilter==='completed') list = list.filter(o=>o.status==='completed');
+  else if(state.orderFilter==='cancelled') list = list.filter(o=>o.status==='cancelled');
+  list = [...list].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+  const wrap = document.getElementById('ordersList');
+  if(!list.length){ wrap.innerHTML = `<div class="empty-state"><div class="ee">🧾</div><h3>No orders here</h3><p>They'll show up the moment a customer orders.</p></div>`; return; }
+  wrap.innerHTML = list.map(renderOrderCard).join('');
+}
+function setOrderFilter(k){ state.orderFilter=k; renderOrders(); }
+
+function renderOrderCard(o){
+  const flow = STATUS_FLOW[o.status]||{label:o.status};
+  const pillClass = o.status==='cancelled' ? 'danger' : (o.status==='completed' ? 'ok' : (NEW_STATUSES.includes(o.status) ? 'warn' : 'info'));
+  const typeLabel = o.type==='dine-in' ? (o.table?o.table.hall+' • Table '+o.table.number:'Dine-in') : o.type==='delivery' ? 'Delivery' : 'Takeaway';
+
+  let custBlock = '';
+  if(o.customer && (o.customer.name||o.customer.phone||o.customer.address||o.customer.note)){
+    custBlock = `<div class="cust-block">
+      ${o.customer.name?`<strong>${o.customer.name}</strong><br>`:''}
+      ${o.customer.phone?`📞 ${o.customer.phone}<br>`:''}
+      ${o.customer.address?`📍 ${o.customer.address}<br>`:''}
+      ${o.customer.note?`📝 ${o.customer.note}`:''}
+    </div>`;
+  }
+  const itemsHtml = (o.items||[]).map(i=>`<div class="item-row"><span>${i.qty>1?i.qty+'x ':''}${i.name}${i.size?' ('+i.size+')':''}${i.dealDetails?'<br><span class="muted">'+i.dealDetails.join(', ')+'</span>':''}</span><span>${money(i.lineTotal)}</span></div>`).join('');
+
+  let actions = '';
+  if(o.type==='delivery' && (o.deliveryCharge===null||o.deliveryCharge===undefined)){
+    actions = `<div class="inline-input-row">
+        <input type="number" inputmode="numeric" placeholder="Delivery charge (Rs)" id="dc-${o.id}">
+        <button class="btn btn-primary btn-sm" style="width:auto;padding:10px 14px" onclick="setDeliveryCharge('${o.id}','${o.paymentMethod}')">Save</button>
+      </div>`;
+  } else if(o.status==='awaiting_confirmation'){
+    actions = `<div class="order-actions"><button class="btn btn-primary" onclick="confirmOrder('${o.id}')">✅ Confirm Order</button></div>`;
+  } else if(o.status==='payment_submitted'){
+    actions = `<div class="cust-block">💳 Transaction ID: <strong>${o.transactionId||'—'}</strong></div>
+      <div class="order-actions"><button class="btn btn-primary" onclick="verifyPayment('${o.id}',true)">✅ Verified — Confirm Order</button>
+      <button class="btn btn-ghost" onclick="verifyPayment('${o.id}',false)">Payment not received</button></div>`;
+  } else if(o.status==='confirmed' || o.status==='preparing'){
+    actions = `<div class="cust-block">👨‍🍳 ${o.status==='preparing'?'In the kitchen now':'Sent to kitchen — waiting to start'}</div>`;
+  } else if(o.status==='ready'){
+    if(o.type==='delivery') actions = `<div class="order-actions"><button class="btn btn-primary" onclick="advanceStatus('${o.id}','out_for_delivery')">🛵 Send Out for Delivery</button></div>`;
+    else if(o.type==='dine-in') actions = `<div class="order-actions"><button class="btn btn-primary" onclick="advanceStatus('${o.id}','completed')">🍽️ Mark Served</button></div>`;
+    else actions = `<div class="order-actions"><button class="btn btn-primary" onclick="advanceStatus('${o.id}','completed')">🥡 Mark Picked Up</button></div>`;
+  } else if(o.status==='out_for_delivery'){
+    actions = `<div class="order-actions"><button class="btn btn-primary" onclick="advanceStatus('${o.id}','completed')">✅ Mark Delivered</button></div>`;
+  }
+  const canCancel = !['completed','cancelled'].includes(o.status);
+
+  return `<div class="order-card">
+    <div class="order-head"><div><div class="order-type">${typeLabel}</div><div class="order-id">#${o.id.slice(-6).toUpperCase()} • ${timeAgo(o.createdAt)}</div></div>
+    <span class="status-pill ${pillClass}">${flow.label}</span></div>
+    ${custBlock}
+    <div class="items-block">${itemsHtml}</div>
+    <div class="totals-row"><span>Subtotal</span><span>${money(o.subtotal)}</span></div>
+    ${o.deliveryCharge?`<div class="totals-row"><span>Delivery charge</span><span>${money(o.deliveryCharge)}</span></div>`:''}
+    <div class="totals-row grand"><span>Total</span><span>${o.total!=null?money(o.total):'Pending'}</span></div>
+    <div class="muted" style="margin-top:2px">Payment: ${o.paymentMethod==='easypaisa'?'Easypaisa':o.paymentMethod==='cod'?'Cash on Delivery':'Cash'}</div>
+    ${actions}
+    ${canCancel?`<button class="cancel-link" onclick="cancelOrderAdmin('${o.id}')">Cancel this order</button>`:''}
+  </div>`;
+}
+function setDeliveryCharge(orderId, paymentMethod){
+  const val = parseFloat(document.getElementById('dc-'+orderId).value);
+  if(isNaN(val) || val<0){ toast('Enter a valid delivery charge'); return; }
+  const order = state.orders.find(o=>o.id===orderId);
+  const total = (order.subtotal||0) + val;
+  const newStatus = paymentMethod==='easypaisa' ? 'awaiting_payment' : 'confirmed';
+  Store.updateOrder(orderId, {deliveryCharge:val, total, status:newStatus}).then(()=>{ toast('Delivery charge saved'); refreshAll(); });
+}
+function confirmOrder(orderId){ Store.updateOrder(orderId, {status:'confirmed'}).then(()=>{ toast('Order confirmed — sent to kitchen'); refreshAll(); }); }
+function verifyPayment(orderId, verified){
+  if(verified) Store.updateOrder(orderId, {status:'confirmed', paymentStatus:'paid'}).then(()=>{ toast('Payment verified — sent to kitchen'); refreshAll(); });
+  else Store.updateOrder(orderId, {status:'awaiting_payment'}).then(()=>{ toast('Marked as not received — customer can resubmit'); refreshAll(); });
+}
+function advanceStatus(orderId, status){ Store.updateOrder(orderId, {status}).then(()=>{ toast('Order updated'); refreshAll(); }); }
+function cancelOrderAdmin(orderId){
+  if(!confirm('Cancel this order?')) return;
+  Store.updateOrder(orderId, {status:'cancelled'}).then(()=>{ toast('Order cancelled'); refreshAll(); });
+}
+
+/* ============================================================
+   MENU TAB
+   ============================================================ */
+function renderMenuCategoryChips(){
+  document.getElementById('menuCategoryChips').innerHTML = state.categories.map(c=>{
+    const count = state.products.filter(p=>p.categoryId===c.id).length;
+    return `<button class="chip ${c.id===state.menuActiveCatId?'active':''}" onclick="selectMenuCat('${c.id}')">${c.name}<span class="cnt">${count}</span></button>`;
+  }).join('');
+}
+function selectMenuCat(id){ state.menuActiveCatId=id; renderMenuCategoryChips(); renderMenuProducts(); }
+function renderMenuProducts(){
+  const wrap = document.getElementById('menuProductList');
+  const items = state.products.filter(p=>p.categoryId===state.menuActiveCatId);
+  if(!items.length){ wrap.innerHTML = `<div class="empty-state"><div class="ee">🍽️</div><h3>No items yet</h3><p>Tap "+ Product" to add one.</p></div>`; return; }
+  wrap.innerHTML = `<div class="card">` + items.map(p=>{
+    const priceLabel = p.sizes ? p.sizes.map(s=>s.label+' '+money(s.price)).join(' · ') : money(p.price||0);
+    return `<div class="list-row">
+      <span style="font-size:22px">${p.icon||'🍽️'}</span>
+      <div class="list-row-main"><div class="lt">${p.name}</div><div class="ls">${p.needsPriceReview?'⚠️ Needs price':priceLabel}</div></div>
+      <label class="switch"><input type="checkbox" ${p.available!==false?'checked':''} onchange="toggleProductAvailable('${p.id}',this.checked)"><span class="slider"></span></label>
+      <button class="icon-btn-sm" onclick="openProductForm('${p.id}')">✏️</button>
+      <button class="icon-btn-sm" onclick="deleteProduct('${p.id}')">🗑️</button>
+    </div>`;
+  }).join('') + `</div>`;
+}
+function toggleProductAvailable(id, val){
+  const list = [...state.products];
+  const p = list.find(x=>x.id===id); if(p) p.available = val;
+  Store.saveProducts(list).then(()=>{ toast(val?'Marked available':'Marked unavailable'); refreshAll(); });
+}
+function deleteProduct(id){
+  if(!confirm('Delete this product?')) return;
+  Store.saveProducts(state.products.filter(p=>p.id!==id)).then(()=>{ toast('Product deleted'); refreshAll(); });
+}
+function openCategoryForm(){
+  document.getElementById('formTitle').textContent = 'Add Category';
+  document.getElementById('formBody').innerHTML = `<div class="field"><label>Category name</label><input id="fCatName" placeholder="e.g. Drinks"></div>`;
+  document.getElementById('formSaveBtn').onclick = ()=>{
+    const name = document.getElementById('fCatName').value.trim();
+    if(!name){ toast('Enter a name'); return; }
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+uid8().slice(0,4);
+    const list = [...state.categories, {id, name, group:id, sortOrder: state.categories.length+1}];
+    Store.saveCategories(list).then(()=>{ closeForm(); toast('Category added'); refreshAll(); });
+  };
+  document.getElementById('formOverlay').classList.remove('hidden');
+}
+function openProductForm(productId){
+  const p = productId ? state.products.find(x=>x.id===productId) : null;
+  document.getElementById('formTitle').textContent = p ? 'Edit Product' : 'Add Product';
+  const hasSizes = p ? !!p.sizes : false;
+  document.getElementById('formBody').innerHTML = `
+    <div class="field"><label>Name</label><input id="fName" value="${p?p.name:''}"></div>
+    <div class="field"><label>Description</label><textarea id="fDesc">${p?(p.description||''):''}</textarea></div>
+    <div class="field"><label>Category</label><select id="fCat">${state.categories.map(c=>`<option value="${c.id}" ${p&&p.categoryId===c.id?'selected':''}>${c.name}</option>`).join('')}</select></div>
+    <div class="field"><label>Icon (emoji)</label><input id="fIcon" value="${p?(p.icon||'🍽️'):'🍽️'}" maxlength="2" style="width:70px"></div>
+    <div class="toggle-row"><span style="font-weight:700;font-size:13px">Has multiple sizes?</span><label class="switch"><input type="checkbox" id="fHasSizes" ${hasSizes?'checked':''} onchange="toggleSizeMode(this.checked)"><span class="slider"></span></label></div>
+    <div id="flatPriceWrap" class="field ${hasSizes?'hidden':''}"><label>Price (Rs)</label><input id="fPrice" type="number" value="${p&&!hasSizes?(p.price||0):''}"></div>
+    <div id="sizesWrap" class="${hasSizes?'':'hidden'}">
+      <label style="display:block;font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-bottom:6px">Sizes (label / price / extra topping price)</label>
+      <div id="sizeRows"></div>
+      <button class="btn btn-outline btn-sm" onclick="addSizeRow()" type="button">+ Add Size</button>
+    </div>
+    <div class="toggle-row" style="margin-top:10px"><span style="font-weight:700;font-size:13px">Available to order</span><label class="switch"><input type="checkbox" id="fAvail" ${!p||p.available!==false?'checked':''}><span class="slider"></span></label></div>
+  `;
+  if(hasSizes && p.sizes) p.sizes.forEach(s=>addSizeRow(s));
+  else if(!p) {} // leave empty, owner adds rows if they toggle sizes on
+  document.getElementById('formSaveBtn').onclick = ()=>saveProductForm(productId);
+  document.getElementById('formOverlay').classList.remove('hidden');
+}
+function toggleSizeMode(hasSizes){
+  document.getElementById('flatPriceWrap').classList.toggle('hidden', hasSizes);
+  document.getElementById('sizesWrap').classList.toggle('hidden', !hasSizes);
+  if(hasSizes && !document.getElementById('sizeRows').children.length) addSizeRow();
+}
+function addSizeRow(s){
+  const row = document.createElement('div'); row.className='size-edit-row';
+  row.innerHTML = `<input placeholder="Label" class="sz-label" value="${s?s.label:''}">
+    <input placeholder="Price" type="number" class="sz-price" value="${s?s.price:''}">
+    <input placeholder="Topping +Rs" type="number" class="sz-topping" value="${s&&s.toppingPrice?s.toppingPrice:''}">
+    <button type="button" class="removeRowBtn" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById('sizeRows').appendChild(row);
+}
+function saveProductForm(productId){
+  const name = document.getElementById('fName').value.trim();
+  if(!name){ toast('Enter a product name'); return; }
+  const hasSizes = document.getElementById('fHasSizes').checked;
+  const categoryId = document.getElementById('fCat').value;
+  const category = state.categories.find(c=>c.id===categoryId);
+  const base = {
+    id: productId || nid(),
+    categoryId, categoryGroup: category?category.group:categoryId,
+    name, description: document.getElementById('fDesc').value.trim(),
+    icon: document.getElementById('fIcon').value.trim()||'🍽️',
+    available: document.getElementById('fAvail').checked
+  };
+  if(hasSizes){
+    const sizes = [...document.querySelectorAll('#sizeRows .size-edit-row')].map(r=>({
+      label: r.querySelector('.sz-label').value.trim(),
+      price: parseFloat(r.querySelector('.sz-price').value)||0,
+      toppingPrice: parseFloat(r.querySelector('.sz-topping').value)||0
+    })).filter(s=>s.label);
+    base.sizes = sizes;
+  } else {
+    base.price = parseFloat(document.getElementById('fPrice').value)||0;
+  }
+  let list = [...state.products];
+  if(productId){ list = list.map(p=>p.id===productId?base:p); } else { list.push(base); }
+  Store.saveProducts(list).then(()=>{ closeForm(); toast('Product saved'); refreshAll(); });
+}
+
+/* ============================================================
+   DEALS TAB
+   ============================================================ */
+function renderDealsAdmin(){
+  const wrap = document.getElementById('dealsAdminList');
+  if(!state.deals.length){ wrap.innerHTML = `<div class="empty-state"><div class="ee">🔥</div><h3>No deals yet</h3></div>`; return; }
+  wrap.innerHTML = `<div class="card">` + state.deals.map(d=>`
+    <div class="list-row">
+      <div class="list-row-main"><div class="lt">${d.name} — ${money(d.price)}</div><div class="ls">${(d.items||[]).map(i=>(i.qty>1?i.qty+'x ':'')+i.label).join(', ')}</div></div>
+      <label class="switch"><input type="checkbox" ${d.active!==false?'checked':''} onchange="toggleDealActive('${d.id}',this.checked)"><span class="slider"></span></label>
+      <button class="icon-btn-sm" onclick="openDealForm('${d.id}')">✏️</button>
+      <button class="icon-btn-sm" onclick="deleteDeal('${d.id}')">🗑️</button>
+    </div>`).join('') + `</div>`;
+}
+function toggleDealActive(id,val){
+  const list = state.deals.map(d=>d.id===id?{...d,active:val}:d);
+  Store.saveDeals(list).then(()=>{ toast(val?'Deal active':'Deal hidden'); refreshAll(); });
+}
+function deleteDeal(id){
+  if(!confirm('Delete this deal?')) return;
+  Store.saveDeals(state.deals.filter(d=>d.id!==id)).then(()=>{ toast('Deal deleted'); refreshAll(); });
+}
+function openDealForm(dealId){
+  const d = dealId ? state.deals.find(x=>x.id===dealId) : null;
+  document.getElementById('formTitle').textContent = d ? 'Edit Deal' : 'Add Deal';
+  document.getElementById('formBody').innerHTML = `
+    <div class="field"><label>Deal name</label><input id="fDealName" value="${d?d.name:''}"></div>
+    <div class="field"><label>Price (Rs)</label><input id="fDealPrice" type="number" value="${d?d.price:''}"></div>
+    <div class="field"><label>Ribbon tag (optional)</label><input id="fDealRibbon" value="${d?(d.ribbon||''):''}" placeholder="e.g. 🔥 Best Value"></div>
+    <label style="display:block;font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-bottom:6px">Included items</label>
+    <div id="dealItemRows"></div>
+    <button class="btn btn-outline btn-sm" type="button" onclick="addDealItemRow()">+ Add Item</button>
+    <div class="toggle-row" style="margin-top:10px"><span style="font-weight:700;font-size:13px">Active</span><label class="switch"><input type="checkbox" id="fDealActive" ${!d||d.active!==false?'checked':''}><span class="slider"></span></label></div>
+  `;
+  if(d && d.items) d.items.forEach(addDealItemRow); else addDealItemRow();
+  document.getElementById('formSaveBtn').onclick = ()=>saveDealForm(dealId);
+  document.getElementById('formOverlay').classList.remove('hidden');
+}
+function addDealItemRow(item){
+  const row = document.createElement('div'); row.className='dealitem-row';
+  row.innerHTML = `<input type="text" placeholder="e.g. 1 Small Pizza" class="di-label" value="${item?item.label:''}">
+    <input type="number" placeholder="Qty" class="di-qty" value="${item?item.qty:1}">
+    <label style="font-size:10px;display:flex;align-items:center;gap:3px;flex-shrink:0"><input type="checkbox" class="di-flavor" ${item&&item.chooseFlavor?'checked':''}> Flavor?</label>
+    <button type="button" class="removeRowBtn" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById('dealItemRows').appendChild(row);
+}
+function saveDealForm(dealId){
+  const name = document.getElementById('fDealName').value.trim();
+  const price = parseFloat(document.getElementById('fDealPrice').value)||0;
+  if(!name||!price){ toast('Enter a name and price'); return; }
+  const items = [...document.querySelectorAll('#dealItemRows .dealitem-row')].map(r=>({
+    label: r.querySelector('.di-label').value.trim(),
+    qty: parseInt(r.querySelector('.di-qty').value)||1,
+    chooseFlavor: r.querySelector('.di-flavor').checked
+  })).filter(i=>i.label);
+  const deal = { id: dealId||('deal_'+uid8()), name, price, ribbon: document.getElementById('fDealRibbon').value.trim()||null, items, active: document.getElementById('fDealActive').checked };
+  let list = [...state.deals];
+  if(dealId){ list = list.map(d=>d.id===dealId?deal:d); } else { list.push(deal); }
+  Store.saveDeals(list).then(()=>{ closeForm(); toast('Deal saved'); refreshAll(); });
+}
+
+/* ============================================================
+   TABLES TAB
+   ============================================================ */
+function renderTablesHallChips(){
+  const halls = [...new Set(state.tables.map(t=>t.hall))];
+  if(!halls.includes(state.tablesActiveHall)) state.tablesActiveHall = halls[0]||null;
+  document.getElementById('tablesHallChips').innerHTML = halls.map(h=>`<button class="chip ${h===state.tablesActiveHall?'active':''}" onclick="selectTablesHall('${h}')">${h} Hall</button>`).join('');
+}
+function selectTablesHall(h){ state.tablesActiveHall=h; renderTablesHallChips(); renderAdminTableGrid(); }
+function renderAdminTableGrid(){
+  const grid = document.getElementById('adminTableGrid');
+  const tables = state.tables.filter(t=>t.hall===state.tablesActiveHall);
+  if(!tables.length){ grid.innerHTML = `<div class="empty-state"><div class="ee">🪑</div><h3>No tables in this hall</h3></div>`; return; }
+  grid.innerHTML = tables.map(t=>`
+    <div class="table-cell ${t.status||'free'}" onclick="cycleTableStatus('${t.id}')">
+      <button class="delx" onclick="event.stopPropagation();deleteTable('${t.id}')">✕</button>
+      <div>#${t.number}</div><div class="ts">${t.status||'free'}</div>
+    </div>`).join('');
+}
+function cycleTableStatus(id){
+  const order = ['free','occupied','reserved'];
+  const list = state.tables.map(t=>{
+    if(t.id===id){ const next = order[(order.indexOf(t.status||'free')+1)%order.length]; return {...t, status:next}; }
+    return t;
+  });
+  Store.saveTables(list).then(()=>refreshAll());
+}
+function deleteTable(id){
+  if(!confirm('Remove this table?')) return;
+  Store.saveTables(state.tables.filter(t=>t.id!==id)).then(()=>{ toast('Table removed'); refreshAll(); });
+}
+function addTableToHall(){
+  const hallTables = state.tables.filter(t=>t.hall===state.tablesActiveHall);
+  const nextNum = hallTables.length ? Math.max(...hallTables.map(t=>t.number))+1 : 1;
+  const list = [...state.tables, {id:'t_'+uid8(), hall:state.tablesActiveHall, number:nextNum, status:'free'}];
+  Store.saveTables(list).then(()=>{ toast('Table #'+nextNum+' added'); refreshAll(); });
+}
+function addHallPrompt(){
+  const name = prompt('New hall name (e.g. Rooftop):');
+  if(!name) return;
+  const list = [...state.tables, {id:'t_'+uid8(), hall:name, number:1, status:'free'}];
+  Store.saveTables(list).then(()=>{ state.tablesActiveHall=name; toast('Hall "'+name+'" added'); refreshAll(); });
+}
+function renderReservations(){
+  const wrap = document.getElementById('reservationsList');
+  const list = [...state.reservations].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(!list.length){ wrap.innerHTML = `<div class="empty-state"><div class="ee">📅</div><h3>No reservation requests</h3></div>`; return; }
+  wrap.innerHTML = list.map(r=>`
+    <div class="card">
+      <div class="row-between"><strong>${r.hall} Hall — Table ${r.tableNumber}</strong><span class="status-pill ${r.status==='confirmed'?'ok':r.status==='cancelled'?'danger':'warn'}">${r.status}</span></div>
+      <div class="muted" style="margin-top:6px">${r.date} at ${r.time} • Party of ${r.partySize}</div>
+      <div class="muted">${r.name} • ${r.phone}</div>
+      ${r.status==='pending'?`<div class="order-actions" style="margin-top:10px"><button class="btn btn-primary btn-sm" onclick="setResStatus('${r.id}','confirmed')">Confirm</button><button class="btn btn-ghost btn-sm" onclick="setResStatus('${r.id}','cancelled')">Decline</button></div>`:''}
+    </div>`).join('');
+}
+function setResStatus(id, status){ Store.updateReservation(id, {status}).then(()=>{ toast('Reservation '+status); refreshAll(); }); }
+
+/* ============================================================
+   PROMOS TAB
+   ============================================================ */
+function renderMediaAdmin(){
+  const wrap = document.getElementById('mediaAdminList');
+  if(!state.media.length){ wrap.innerHTML = `<div class="empty-state"><div class="ee">🎬</div><h3>No media yet</h3><p>Add a photo or video URL to show it in the Customer App.</p></div>`; return; }
+  wrap.innerHTML = `<div class="card">` + state.media.map(m=>`
+    <div class="list-row">
+      <span style="font-size:20px">${m.type==='video'?'🎬':'🖼️'}</span>
+      <div class="list-row-main"><div class="lt">${m.caption||'(no caption)'}</div><div class="ls">${m.url.slice(0,40)}…</div></div>
+      <label class="switch"><input type="checkbox" ${m.active!==false?'checked':''} onchange="toggleMediaActive('${m.id}',this.checked)"><span class="slider"></span></label>
+      <button class="icon-btn-sm" onclick="deleteMedia('${m.id}')">🗑️</button>
+    </div>`).join('') + `</div>`;
+}
+function toggleMediaActive(id,val){
+  Store.saveMedia(state.media.map(m=>m.id===id?{...m,active:val}:m)).then(()=>refreshAll());
+}
+function deleteMedia(id){
+  if(!confirm('Delete this media post?')) return;
+  Store.saveMedia(state.media.filter(m=>m.id!==id)).then(()=>{ toast('Deleted'); refreshAll(); });
+}
+function openMediaForm(){
+  document.getElementById('formTitle').textContent = 'Add Photo / Video';
+  document.getElementById('formBody').innerHTML = `
+    <div class="field"><label>Type</label><select id="fMediaType"><option value="image">Image</option><option value="video">Video</option></select></div>
+    <div class="field"><label>Media URL</label><input id="fMediaUrl" placeholder="https://..."></div>
+    <div class="field"><label>Caption (optional)</label><input id="fMediaCaption" placeholder="e.g. New Bihari Kebab Pizza is here!"></div>
+    <p class="muted">🧪 For now, paste a link to an already-hosted photo/video. Direct file upload arrives once Firebase Storage is connected.</p>
+  `;
+  document.getElementById('formSaveBtn').onclick = ()=>{
+    const url = document.getElementById('fMediaUrl').value.trim();
+    if(!url){ toast('Paste a media URL'); return; }
+    const item = { id:'m_'+uid8(), type:document.getElementById('fMediaType').value, url, caption:document.getElementById('fMediaCaption').value.trim(), active:true, createdAt:Date.now() };
+    Store.saveMedia([item, ...state.media]).then(()=>{ closeForm(); toast('Added'); refreshAll(); });
+  };
+  document.getElementById('formOverlay').classList.remove('hidden');
+}
+
+function closeForm(){ document.getElementById('formOverlay').classList.add('hidden'); }
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registration failed', e)); });
+}
+</script>
+</body>
+</html>

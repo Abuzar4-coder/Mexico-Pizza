@@ -1,0 +1,15 @@
+{
+  "name": "Mexico Pizza - Kitchen Queue",
+  "short_name": "MP Kitchen",
+  "description": "Live kitchen order queue for Mexico Pizza.",
+  "start_url": "./kitchen.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFF8F2",
+  "theme_color": "#241A14",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

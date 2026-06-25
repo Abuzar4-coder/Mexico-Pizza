@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Mexico Pizza — Kitchen</title>
+<meta name="theme-color" content="#241A14">
+<link rel="manifest" href="manifest-kitchen.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Standalone test build — shares the same mp_orders localStorage key
+   as the Customer App and Admin Panel. When served from the same
+   origin, confirming an order in Admin makes it appear here live. */
+:root{
+  --red:#E8341C; --red-deep:#B71F0E; --orange:#FF7A1A; --gold:#FFC400;
+  --ink:#241A14; --ink-soft:#8A7568; --paper:#FFFFFF; --bg:#FFF8F2; --line:#F1E3D4;
+  --green-ok:#1F8A4C; --green-ok-bg:#E8F7EE;
+  --radius:16px; --shadow:0 4px 16px rgba(36,26,20,0.08); --shadow-lift:0 12px 28px rgba(36,26,20,0.16);
+  --grad-cta:linear-gradient(135deg,var(--orange) 0%,var(--red) 70%);
+  --grad-hero:linear-gradient(120deg,#1c1410 0%,#241A14 60%,#3a2a1f 100%);
+  --safe-bottom:env(safe-area-inset-bottom,0px); --safe-top:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
+h1,h2,h3{font-family:'Poppins',sans-serif;}
+button{font-family:inherit;cursor:pointer;}
+.hidden{display:none!important;}
+::-webkit-scrollbar{display:none;}
+#app{max-width:640px;margin:0 auto;min-height:100vh;background:var(--bg);}
+.devbanner{background:#1c1410;color:#FFD7A8;font-size:11px;font-weight:700;text-align:center;padding:6px 10px;}
+.topbar{position:sticky;top:0;z-index:30;background:var(--grad-hero);padding:calc(12px + var(--safe-top)) 16px 14px;color:#fff;display:flex;justify-content:space-between;align-items:center;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{width:38px;height:38px;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;color:var(--red);font-size:14px;}
+.brand-name{font-family:'Poppins';font-weight:700;font-size:16px;}
+.pending-count{background:var(--gold);color:#3a2400;font-weight:800;font-size:13px;border-radius:30px;padding:7px 14px;}
+.logout-btn{background:rgba(255,255,255,0.16);border:none;color:#fff;border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700;margin-left:8px;}
+
+.view{padding:16px;}
+.section-title{font-family:'Poppins';font-size:18px;font-weight:700;margin:4px 0 12px;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+.empty-state .ee{font-size:46px;margin-bottom:10px;}
+.empty-state h3{font-family:'Poppins';color:var(--ink);margin:0 0 4px;font-size:16px;}
+.empty-state p{font-size:13px;margin:0;}
+
+.kcard{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px;border-left:5px solid var(--line);}
+.kcard.confirmed{border-left-color:var(--gold);}
+.kcard.preparing{border-left-color:var(--orange);}
+.khead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.ktype{font-family:'Poppins';font-weight:700;font-size:16px;}
+.ktime{font-size:11px;color:var(--ink-soft);}
+.kbadge{font-size:10.5px;font-weight:800;padding:5px 10px;border-radius:20px;white-space:nowrap;}
+.kbadge.confirmed{background:#FFF7E0;color:#8a6312;}
+.kbadge.preparing{background:#FFE9D6;color:#a14d00;}
+.kitems{margin:10px 0;font-size:15px;line-height:1.6;}
+.kitem-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line);}
+.kitem-row:last-child{border-bottom:none;}
+.kitem-qty{font-weight:800;color:var(--red-deep);margin-right:6px;}
+.knote{background:var(--bg);border-radius:10px;padding:9px 11px;font-size:12.5px;margin-top:8px;}
+.kbtn{display:block;width:100%;border:none;border-radius:30px;padding:14px;font-weight:800;font-size:14.5px;text-align:center;margin-top:12px;}
+.kbtn-start{background:var(--ink);color:#fff;}
+.kbtn-ready{background:var(--grad-cta);color:#fff;box-shadow:0 8px 18px rgba(232,52,28,0.3);}
+
+.readylist{margin-top:6px;}
+.ready-row{display:flex;justify-content:space-between;align-items:center;background:var(--paper);border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:13px;box-shadow:var(--shadow);}
+.ready-row .rtag{font-size:10.5px;font-weight:800;color:var(--green-ok);background:var(--green-ok-bg);padding:4px 9px;border-radius:20px;}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:30px;font-size:13px;font-weight:600;z-index:150;box-shadow:var(--shadow-lift);max-width:86%;text-align:center;}
+
+#loginScreen{position:fixed;inset:0;background:var(--grad-hero);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;}
+#loginScreen .lmark{width:64px;height:64px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;color:var(--red);font-size:22px;margin-bottom:10px;}
+#loginScreen h1{font-size:20px;margin:6px 0 2px;text-align:center;}
+#loginScreen p{color:#cbb8ac;font-size:12.5px;margin:0 0 22px;text-align:center;}
+.kitchen-login-btn{background:var(--grad-cta);color:#fff;border:none;border-radius:30px;padding:16px 30px;font-weight:800;font-size:15px;box-shadow:var(--shadow-lift);}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="lmark">👨‍🍳</div>
+  <h1>Mexico Pizza — Kitchen</h1>
+  <p>🧪 Test build — no real password yet, that arrives with Firebase.</p>
+  <button class="kitchen-login-btn" onclick="login()">Continue to Kitchen Queue</button>
+</div>
+
+<div id="app" class="hidden">
+  <div class="devbanner">🧪 Local test build — syncs with Customer/Admin apps only when served from the same address.</div>
+  <div class="topbar">
+    <div class="brand"><div class="brand-mark">MP</div><div class="brand-name">Kitchen Queue</div></div>
+    <div style="display:flex;align-items:center"><span class="pending-count" id="pendingCount">0 pending</span><button class="logout-btn" onclick="logout()">Logout</button></div>
+  </div>
+  <div class="view">
+    <h2 class="section-title">🔥 Cooking Now</h2>
+    <div id="queueList"></div>
+    <h2 class="section-title" style="margin-top:22px">✅ Recently Marked Ready</h2>
+    <div class="readylist" id="readyList"></div>
+  </div>
+</div>
+
+<script>
+const LS = {
+  get(k,d){ try{ const v=localStorage.getItem('mp_'+k); return v?JSON.parse(v):d; }catch(e){return d;} },
+  set(k,v){ try{ localStorage.setItem('mp_'+k, JSON.stringify(v)); }catch(e){} }
+};
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+function timeAgo(ts){
+  if(!ts) return '';
+  const s = Math.floor((Date.now()-ts)/1000);
+  if(s<60) return s+'s ago';
+  if(s<3600) return Math.floor(s/60)+'m ago';
+  return Math.floor(s/3600)+'h ago';
+}
+function money(n){ return 'Rs '+Math.round(n).toLocaleString('en-PK'); }
+
+function login(){
+  LS.set('kitchenLoggedIn', true);
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  bootstrap();
+}
+function logout(){ LS.set('kitchenLoggedIn', false); location.reload(); }
+if(LS.get('kitchenLoggedIn', false)) login();
+
+function bootstrap(){
+  refresh();
+  window.addEventListener('storage', e=>{ if(e.key==='mp_orders') refresh(); });
+  setInterval(refresh, 3000);
+}
+function refresh(){
+  const orders = LS.get('orders', []);
+  const queue = orders.filter(o=>o.status==='confirmed'||o.status==='preparing').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  const ready = orders.filter(o=>['ready','out_for_delivery','served','ready_for_pickup','completed'].includes(o.status))
+    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,8);
+
+  document.getElementById('pendingCount').textContent = queue.length+' pending';
+
+  const qWrap = document.getElementById('queueList');
+  if(!queue.length){ qWrap.innerHTML = `<div class="empty-state"><div class="ee">🎉</div><h3>All caught up!</h3><p>New confirmed orders will appear here automatically.</p></div>`; }
+  else {
+    qWrap.innerHTML = queue.map(o=>{
+      const typeLabel = o.type==='dine-in' ? (o.table?o.table.hall+' • Table '+o.table.number:'Dine-in') : o.type==='delivery' ? 'Delivery' : 'Takeaway';
+      const itemsHtml = (o.items||[]).map(i=>`<div class="kitem-row"><span><span class="kitem-qty">${i.qty}x</span>${i.name}${i.size?' ('+i.size+')':''}</span></div>${i.dealDetails?`<div style="font-size:12px;color:var(--ink-soft);margin:-4px 0 6px 22px">${i.dealDetails.join(', ')}</div>`:''}`).join('');
+      const noteHtml = (o.customer&&o.customer.note) ? `<div class="knote">📝 ${o.customer.note}</div>` : '';
+      const btn = o.status==='confirmed'
+        ? `<button class="kbtn kbtn-start" onclick="startPreparing('${o.id}')">▶️ Start Preparing</button>`
+        : `<button class="kbtn kbtn-ready" onclick="markReady('${o.id}')">✅ Mark Ready</button>`;
+      return `<div class="kcard ${o.status}">
+        <div class="khead"><div><div class="ktype">${typeLabel}</div><div class="ktime">#${o.id.slice(-6).toUpperCase()} • ${timeAgo(o.createdAt)}</div></div>
+        <span class="kbadge ${o.status}">${o.status==='confirmed'?'Waiting to start':'Preparing'}</span></div>
+        <div class="kitems">${itemsHtml}</div>
+        ${noteHtml}
+        ${btn}
+      </div>`;
+    }).join('');
+  }
+
+  const rWrap = document.getElementById('readyList');
+  rWrap.innerHTML = ready.length ? ready.map(o=>{
+    const typeLabel = o.type==='dine-in' ? (o.table?'Table '+o.table.number:'Dine-in') : o.type==='delivery' ? 'Delivery' : 'Takeaway';
+    return `<div class="ready-row"><span>${typeLabel} • #${o.id.slice(-6).toUpperCase()}</span><span class="rtag">${o.status.replace(/_/g,' ')}</span></div>`;
+  }).join('') : `<p style="color:var(--ink-soft);font-size:12.5px">Nothing marked ready yet.</p>`;
+}
+function startPreparing(id){
+  const orders = LS.get('orders', []);
+  const o = orders.find(x=>x.id===id); if(o) o.status='preparing';
+  LS.set('orders', orders); toast('Started preparing'); refresh();
+}
+function markReady(id){
+  const orders = LS.get('orders', []);
+  const o = orders.find(x=>x.id===id); if(o) o.status='ready';
+  LS.set('orders', orders); toast('Marked ready 🎉'); refresh();
+}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registration failed', e)); });
+}
+</script>
+</body>
+</html>
