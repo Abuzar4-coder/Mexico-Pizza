@@ -373,7 +373,6 @@ img{max-width:100%;display:block;}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 /* ============================================================
    FIREBASE CONFIG — paste your project's config here.
@@ -402,11 +401,10 @@ if(FIREBASE_CONFIGURED){
 }
 const db = FIREBASE_CONFIGURED ? firebase.firestore() : null;
 const auth = FIREBASE_CONFIGURED ? firebase.auth() : null;
-const storage = FIREBASE_CONFIGURED ? firebase.storage() : null;
 if(FIREBASE_CONFIGURED){ try{ db.enablePersistence({synchronizeTabs:true}); }catch(e){} }
 </script>
 <script>
-const RESTAURANT = { name:"Mexico Pizza", easypaisaNumber:"03XX-XXXXXXX", easypaisaAccountName:"Mexico Pizza" };
+const RESTAURANT = { name:"Mexico Pizza", easypaisaNumber:"03XX-XXXXXXX", easypaisaAccountName:"Mexico Pizza", whatsappNumber:"92XXXXXXXXXX" };
 
 /* ============================================================
    STORE — local stand-in for the future Firestore layer.
@@ -433,10 +431,6 @@ const Store = {
     res.uid = myUid;
     res.createdAt = firebase.firestore.FieldValue.serverTimestamp();
     return db.collection('reservations').add(res);
-  },
-  uploadPaymentScreenshot(orderId, file){
-    const path = 'payment-proofs/'+orderId+'/'+Date.now()+'_'+file.name;
-    return storage.ref().child(path).put(file).then(snap=>snap.ref.getDownloadURL());
   }
 };
 
@@ -866,7 +860,7 @@ function placeOrder(){
     type: state.orderType, table: state.orderType==='dine-in' ? state.table : null, customer,
     items: state.cart.map(i=>({productId:i.productId||null,dealId:i.dealId||null,isDeal:!!i.isDeal,name:i.name,size:i.size,toppingQty:i.toppingQty,qty:i.qty,unitPrice:i.unitPrice,lineTotal:i.lineTotal*i.qty,dealDetails:i.dealDetails||null})),
     subtotal, deliveryCharge: needsDeliveryCharge ? null : 0, total: needsDeliveryCharge ? null : subtotal,
-    paymentMethod: checkoutPayment, paymentStatus:'unpaid', transactionId:null, paymentScreenshotUrl:null, status: initialStatus
+    paymentMethod: checkoutPayment, paymentStatus:'unpaid', transactionId:null, status: initialStatus
   };
   placingOrder = true;
   Store.placeOrder(order).then(()=>{
@@ -904,18 +898,19 @@ function renderOrderCard(o){
   }).join('');
   let payAction = '';
   if(o.status==='awaiting_payment' && o.paymentMethod==='easypaisa'){
+    const waMsg = encodeURIComponent('Hi, here is my payment screenshot for Order #'+o.id.slice(-6).toUpperCase()+' (Rs '+Math.round(o.total||o.subtotal)+').');
+    const waLink = 'https://wa.me/'+RESTAURANT.whatsappNumber+'?text='+waMsg;
     payAction = `<div class="list-card" style="background:#FFF7E0;border:1px solid var(--gold)">
       <strong style="display:block;margin-bottom:6px">Pay via Easypaisa</strong>
       <div style="font-size:13px;margin-bottom:4px">Send <strong>${money(o.total||o.subtotal)}</strong> to:</div>
       <div style="font-size:15px;font-weight:800;color:var(--red-deep)">${RESTAURANT.easypaisaNumber}</div>
       <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">${RESTAURANT.easypaisaAccountName}</div>
+      <a href="${waLink}" target="_blank" class="btn btn-secondary" style="display:block;text-decoration:none;text-align:center;margin-bottom:10px">📲 Send Screenshot on WhatsApp</a>
       <div class="field" style="margin-bottom:8px"><input type="text" id="txn-${o.id}" placeholder="Transaction ID"></div>
-      <div class="field" style="margin-bottom:8px"><label style="font-size:11px">Payment screenshot</label><input type="file" accept="image/*" id="shot-${o.id}"></div>
-      <button class="btn btn-secondary" id="submitbtn-${o.id}" onclick="submitTransactionId('${o.id}')">Submit Payment Proof</button></div>`;
+      <button class="btn btn-secondary" id="submitbtn-${o.id}" onclick="submitTransactionId('${o.id}')">Submit Transaction ID</button></div>`;
   } else if(o.status==='payment_submitted'){
     payAction = `<div class="list-card" style="background:var(--bg)">
-      <p class="pending-note" style="margin:0 0 8px">We've received your payment details and are verifying them now.</p>
-      ${o.paymentScreenshotUrl?`<a href="${o.paymentScreenshotUrl}" target="_blank"><img src="${o.paymentScreenshotUrl}" style="max-height:140px;border-radius:10px;border:1px solid var(--line)"></a>`:''}
+      <p class="pending-note" style="margin:0">We've received your transaction ID${o.transactionId?' ('+o.transactionId+')':''} and are verifying it now. Make sure you've sent us the screenshot on WhatsApp too.</p>
     </div>`;
   } else if(o.status==='awaiting_confirmation' && o.type==='delivery' && (o.deliveryCharge===null||o.deliveryCharge===undefined)){
     payAction = `<p class="pending-note" style="margin-top:8px">We're confirming your address and will add the delivery charge shortly.</p>`;
@@ -937,20 +932,14 @@ function renderOrderCard(o){
 }
 function submitTransactionId(orderId){
   const txnVal = document.getElementById('txn-'+orderId).value.trim();
-  const fileInput = document.getElementById('shot-'+orderId);
-  const file = fileInput && fileInput.files[0];
   if(!txnVal){ toast('Please enter your transaction ID'); return; }
-  if(!file){ toast('Please attach a screenshot of the payment'); return; }
-  if(file.size > 5*1024*1024){ toast('Screenshot is too large — please use one under 5MB'); return; }
   const btn = document.getElementById('submitbtn-'+orderId);
-  btn.disabled = true; btn.textContent = 'Uploading…';
-  Store.uploadPaymentScreenshot(orderId, file).then(url=>{
-    return Store.updateOrder(orderId, {transactionId:txnVal, paymentScreenshotUrl:url, status:'payment_submitted'});
-  }).then(()=>{
-    toast('Payment details submitted');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  Store.updateOrder(orderId, {transactionId:txnVal, status:'payment_submitted'}).then(()=>{
+    toast('Transaction ID submitted');
   }).catch(e=>{
-    console.error(e); toast('Upload failed — check your connection and try again.');
-    btn.disabled = false; btn.textContent = 'Submit Payment Proof';
+    console.error(e); toast('Could not submit — check your connection and try again.');
+    btn.disabled = false; btn.textContent = 'Submit Transaction ID';
   });
 }
 function cancelOrder(orderId){

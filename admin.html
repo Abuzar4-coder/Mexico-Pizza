@@ -260,7 +260,6 @@ input:checked + .slider::before{transform:translateX(18px);}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 /* ============================================================
    FIREBASE CONFIG — use the EXACT SAME config as index.html
@@ -286,7 +285,6 @@ if(!FIREBASE_CONFIGURED){
 if(FIREBASE_CONFIGURED){ firebase.initializeApp(firebaseConfig); }
 const db = FIREBASE_CONFIGURED ? firebase.firestore() : null;
 const auth = FIREBASE_CONFIGURED ? firebase.auth() : null;
-const storage = FIREBASE_CONFIGURED ? firebase.storage() : null;
 </script>
 <script>
 /* ============================================================
@@ -605,8 +603,8 @@ function renderOrderCard(o){
   } else if(o.status==='awaiting_confirmation'){
     actions = `<div class="order-actions"><button class="btn btn-primary" onclick="confirmOrder('${o.id}')">✅ Confirm Order</button></div>`;
   } else if(o.status==='payment_submitted'){
-    actions = `<div class="cust-block">💳 Transaction ID: <strong>${o.transactionId||'—'}</strong>
-      ${o.paymentScreenshotUrl?`<br><a href="${o.paymentScreenshotUrl}" target="_blank"><img src="${o.paymentScreenshotUrl}" style="max-height:160px;border-radius:10px;margin-top:8px;border:1px solid var(--line)"></a>`:'<br><span style="color:var(--red-deep)">No screenshot attached</span>'}
+    actions = `<div class="cust-block">💳 Transaction ID: <strong>${o.transactionId||'—'}</strong><br>
+      <span class="muted">Check WhatsApp for their payment screenshot, then verify against your Easypaisa account before confirming.</span>
       </div>
       <div class="order-actions"><button class="btn btn-primary" onclick="verifyPayment('${o.id}',true)">✅ Verified — Confirm Order</button>
       <button class="btn btn-ghost" onclick="verifyPayment('${o.id}',false)">Payment not received</button></div>`;
