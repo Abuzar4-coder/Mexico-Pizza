@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
 <title>Mexico Pizza — Kitchen</title>
 <meta name="theme-color" content="#241A14">
-<link rel="manifest" href="manifest-kitchen.json">
 <link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -31,7 +29,6 @@ button{font-family:inherit;cursor:pointer;}
 .hidden{display:none!important;}
 ::-webkit-scrollbar{display:none;}
 #app{max-width:640px;margin:0 auto;min-height:100vh;background:var(--bg);}
-.devbanner{background:#1c1410;color:#FFD7A8;font-size:11px;font-weight:700;text-align:center;padding:6px 10px;}
 .topbar{position:sticky;top:0;z-index:30;background:var(--grad-hero);padding:calc(12px + var(--safe-top)) 16px 14px;color:#fff;display:flex;justify-content:space-between;align-items:center;}
 .brand{display:flex;align-items:center;gap:10px;}
 .brand-mark{width:38px;height:38px;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;color:var(--red);font-size:14px;}
@@ -82,12 +79,16 @@ button{font-family:inherit;cursor:pointer;}
 <div id="loginScreen">
   <div class="lmark">👨‍🍳</div>
   <h1>Mexico Pizza — Kitchen</h1>
-  <p>🧪 Test build — no real password yet, that arrives with Firebase.</p>
-  <button class="kitchen-login-btn" onclick="login()">Continue to Kitchen Queue</button>
+  <p>Sign in with the account your owner created for you.</p>
+  <div style="width:100%;max-width:300px">
+    <div class="field" style="text-align:left;margin-bottom:14px"><label style="color:#cbb8ac;display:block;font-size:11.5px;font-weight:700;margin-bottom:5px">Email</label><input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="username" style="width:100%;border:1.5px solid var(--line);border-radius:11px;padding:11px;font-size:14px;background:rgba(255,255,255,0.95);"></div>
+    <div class="field" style="text-align:left;margin-bottom:14px"><label style="color:#cbb8ac;display:block;font-size:11.5px;font-weight:700;margin-bottom:5px">Password</label><input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;border:1.5px solid var(--line);border-radius:11px;padding:11px;font-size:14px;background:rgba(255,255,255,0.95);"></div>
+    <button class="kitchen-login-btn" id="loginBtn" onclick="doLogin()" style="width:100%">Log In</button>
+    <p id="loginError" class="hidden" style="color:#ff9d8a;font-size:12px;margin-top:12px;text-align:center"></p>
+  </div>
 </div>
 
 <div id="app" class="hidden">
-  <div class="devbanner">🧪 Local test build — syncs with Customer/Admin apps only when served from the same address.</div>
   <div class="topbar">
     <div class="brand"><div class="brand-mark">MP</div><div class="brand-name">Kitchen Queue</div></div>
     <div style="display:flex;align-items:center"><span class="pending-count" id="pendingCount">0 pending</span><button class="logout-btn" onclick="logout()">Logout</button></div>
@@ -100,40 +101,102 @@ button{font-family:inherit;cursor:pointer;}
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
-const LS = {
-  get(k,d){ try{ const v=localStorage.getItem('mp_'+k); return v?JSON.parse(v):d; }catch(e){return d;} },
-  set(k,v){ try{ localStorage.setItem('mp_'+k, JSON.stringify(v)); }catch(e){} }
+/* ============================================================
+   FIREBASE CONFIG — use the EXACT SAME config as index.html
+   and admin.html.
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
+const FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "YOUR_API_KEY";
+if(!FIREBASE_CONFIGURED){
+  document.getElementById('loginScreen').innerHTML = `<div style="max-width:300px;text-align:center;padding:20px">
+    <div class="lmark" style="margin:0 auto 14px;font-size:28px">⚠️</div>
+    <p style="font-weight:700">Firebase isn't configured yet</p>
+    <p style="font-size:12.5px;opacity:0.9">Open this file, paste your Firebase config near the top of the &lt;script&gt; section, then reload.</p>
+  </div>`;
+}
+if(FIREBASE_CONFIGURED){ firebase.initializeApp(firebaseConfig); }
+const db = FIREBASE_CONFIGURED ? firebase.firestore() : null;
+const auth = FIREBASE_CONFIGURED ? firebase.auth() : null;
+</script>
+<script>
 function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
 function timeAgo(ts){
   if(!ts) return '';
-  const s = Math.floor((Date.now()-ts)/1000);
+  const seconds = ts.seconds ? ts.seconds : Math.floor(ts/1000);
+  const s = Math.floor(Date.now()/1000) - seconds;
   if(s<60) return s+'s ago';
   if(s<3600) return Math.floor(s/60)+'m ago';
   return Math.floor(s/3600)+'h ago';
 }
 function money(n){ return 'Rs '+Math.round(n).toLocaleString('en-PK'); }
 
-function login(){
-  LS.set('kitchenLoggedIn', true);
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  bootstrap();
+function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.classList.add('hidden');
+  if(!email || !password){ errEl.textContent='Enter your email and password'; errEl.classList.remove('hidden'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Logging in…';
+  auth.signInWithEmailAndPassword(email, password).catch(err=>{
+    console.error(err);
+    errEl.textContent = 'Login failed — check your email and password.';
+    errEl.classList.remove('hidden');
+    btn.disabled = false; btn.textContent = 'Log In';
+  });
 }
-function logout(){ LS.set('kitchenLoggedIn', false); location.reload(); }
-if(LS.get('kitchenLoggedIn', false)) login();
+function logout(){ auth.signOut(); }
 
-function bootstrap(){
-  refresh();
-  window.addEventListener('storage', e=>{ if(e.key==='mp_orders') refresh(); });
-  setInterval(refresh, 3000);
+if(FIREBASE_CONFIGURED){
+  auth.onAuthStateChanged(user=>{
+    const btn = document.getElementById('loginBtn');
+    if(btn){ btn.disabled = false; btn.textContent = 'Log In'; }
+    if(!user){
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('app').classList.add('hidden');
+      return;
+    }
+    db.collection('staff').doc(user.uid).get().then(doc=>{
+      if(!doc.exists){
+        const errEl = document.getElementById('loginError');
+        errEl.textContent = 'This account is not authorized for the kitchen queue.';
+        errEl.classList.remove('hidden');
+        auth.signOut();
+        return;
+      }
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      bootstrap();
+    }).catch(err=>{ console.error(err); toast('Could not verify your account — try again.'); auth.signOut(); });
+  });
 }
-function refresh(){
-  const orders = LS.get('orders', []);
-  const queue = orders.filter(o=>o.status==='confirmed'||o.status==='preparing').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-  const ready = orders.filter(o=>['ready','out_for_delivery','served','ready_for_pickup','completed'].includes(o.status))
-    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,8);
+
+let allOrders = [];
+let bootstrapped = false;
+function bootstrap(){
+  if(bootstrapped) return;
+  bootstrapped = true;
+  db.collection('orders').onSnapshot(snap=>{
+    allOrders = snap.docs.map(d=>({id:d.id,...d.data()}));
+    render();
+  }, err=>{ console.error(err); toast('Connection issue — check your internet.'); });
+}
+function render(){
+  const queue = allOrders.filter(o=>o.status==='confirmed'||o.status==='preparing')
+    .sort((a,b)=>((a.createdAt&&a.createdAt.seconds)||0)-((b.createdAt&&b.createdAt.seconds)||0));
+  const ready = allOrders.filter(o=>['ready','out_for_delivery','served','ready_for_pickup','completed'].includes(o.status))
+    .sort((a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0)).slice(0,8);
 
   document.getElementById('pendingCount').textContent = queue.length+' pending';
 
@@ -164,19 +227,14 @@ function refresh(){
   }).join('') : `<p style="color:var(--ink-soft);font-size:12.5px">Nothing marked ready yet.</p>`;
 }
 function startPreparing(id){
-  const orders = LS.get('orders', []);
-  const o = orders.find(x=>x.id===id); if(o) o.status='preparing';
-  LS.set('orders', orders); toast('Started preparing'); refresh();
+  db.collection('orders').doc(id).update({status:'preparing'}).then(()=>toast('Started preparing'))
+    .catch(e=>{console.error(e);toast('Could not update — check your connection.');});
 }
 function markReady(id){
-  const orders = LS.get('orders', []);
-  const o = orders.find(x=>x.id===id); if(o) o.status='ready';
-  LS.set('orders', orders); toast('Marked ready 🎉'); refresh();
+  db.collection('orders').doc(id).update({status:'ready'}).then(()=>toast('Marked ready 🎉'))
+    .catch(e=>{console.error(e);toast('Could not update — check your connection.');});
 }
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registration failed', e)); });
-}
 </script>
 </body>
 </html>

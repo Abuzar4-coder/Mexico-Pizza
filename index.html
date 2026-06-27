@@ -6,20 +6,16 @@
 <title>Mexico Pizza — Order Online</title>
 <meta name="description" content="Order pizza, burgers, wings and more from Mexico Pizza — Burger & Fried Chicken.">
 <meta name="theme-color" content="#E8341C">
-<link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   THIS IS A STANDALONE TEST BUILD — NO FIREBASE, NO EXTERNAL
-   FILES. Everything runs on built-in sample data so you can
-   click through the whole app right now, on any device, with
-   zero setup. Once you're happy with how it looks and behaves,
-   tell me and I'll wire it up to Firebase + add manifest.json,
-   sw.js and the icon files for installable PWA support.
+   MEXICO PIZZA — CUSTOMER APP
+   Connects to Firebase (Firestore + Auth + Storage). Paste your
+   project config below before this will work — see
+   FIREBASE-SETUP.md for the full setup walkthrough.
    ============================================================ */
 
 /* DESIGN TOKENS — bold, appetite-driven "fast food" theme */
@@ -57,7 +53,6 @@ img{max-width:100%;display:block;}
 #app{max-width:560px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;padding-bottom:calc(64px + var(--safe-bottom));display:flex;flex-direction:column;}
 
 /* banner shown only in this no-backend test build */
-.devbanner{background:#241A14;color:#FFD7A8;font-size:11px;font-weight:700;text-align:center;padding:6px 10px;letter-spacing:0.2px;}
 
 /* ============================================================
    TOP BAR
@@ -240,7 +235,6 @@ img{max-width:100%;display:block;}
 .status-pill.danger{background:#FCE6E2;color:var(--red-deep);}
 
 .cancel-link{text-align:center;display:block;margin-top:12px;font-size:12.5px;color:var(--ink-soft);text-decoration:underline;}
-.testmode-chip{display:inline-flex;align-items:center;gap:6px;background:#FFF1DD;color:#9A6300;font-size:11.5px;font-weight:700;padding:8px 12px;border-radius:12px;margin-bottom:12px;}
 
 .toast{position:fixed;bottom:165px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:30px;font-size:13px;font-weight:600;z-index:150;box-shadow:var(--shadow-lift);max-width:86%;text-align:center;}
 
@@ -260,8 +254,6 @@ img{max-width:100%;display:block;}
 <div id="splash"><div class="smark">MP</div><p>Loading menu…</p></div>
 
 <div id="app" class="hidden">
-  <div class="devbanner">🧪 Local test build — not connected to Firebase yet. Syncs with the Admin/Kitchen apps only when served from the same address.</div>
-
   <div class="topbar">
     <div class="topbar-row">
       <div class="brand">
@@ -378,109 +370,50 @@ img{max-width:100%;display:block;}
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 /* ============================================================
-   SAMPLE DATA — stands in for Firestore for now. Same shape
-   we'll use later, so swapping in real Firebase data won't
-   require touching the rendering code below.
+   FIREBASE CONFIG — paste your project's config here.
+   Firebase Console → Project settings → General → Your apps →
+   Web app → Config. Use the EXACT SAME config in admin.html
+   and kitchen.html — all three apps share one Firebase project.
    ============================================================ */
-const REG_SIZES = ()=>[
-  {label:'Small', price:550, toppingPrice:90},
-  {label:'Medium', price:1049, toppingPrice:120},
-  {label:'Large', price:1299, toppingPrice:150},
-  {label:'XL', price:1999, toppingPrice:250},
-];
-const SPECIAL_SIZES = ()=>[
-  {label:'Small', price:649, toppingPrice:149},
-  {label:'Medium', price:1149, toppingPrice:199},
-  {label:'Large', price:1399, toppingPrice:249},
-  {label:'XL', price:2199, toppingPrice:299},
-];
-
-const DEFAULT_CATEGORIES = [
-  {id:'pizza-regular', name:'Regular Pizza', group:'pizza-regular', sortOrder:1},
-  {id:'pizza-special', name:'Special Pizza', group:'pizza-special', sortOrder:2},
-  {id:'burgers', name:'Burgers', group:'burger', sortOrder:3},
-  {id:'wings-nuggets', name:'Wings & Nuggets', group:'wings', sortOrder:4},
-  {id:'pasta-sides', name:'Pasta & Sides', group:'pasta', sortOrder:5},
-];
-
-let pid = 0; const nid = ()=> 'p'+(++pid);
-const DEFAULT_PRODUCTS = [
-  ...[
-    ['Chicken Fajita','Chicken, tomato sauce, bell peppers & pineapple'],
-    ['Chicken Tikka','Chicken, tomato sauce, bell peppers, onion & sausage'],
-    ['Chicken Bar.B.Q','Chicken, tomato sauce, bell peppers & onions'],
-    ['Cheese Lovers','Melted layers of cheese and special sauces'],
-    ['The Euro','Chicken, tomato sauce, onion, bell peppers & sausage'],
-    ['Hawaiian Pizza','Chicken, tomato sauce, bell peppers & pineapple'],
-    ['The Milano','Chicken, special sauce, bell peppers & mushrooms'],
-    ['Pizza Osago','Chicken, special sauces, bell peppers, olives & mushrooms'],
-    ['Achari Pizza','Achari chicken, onion, bell peppers, olives & special sauces'],
-    ['Vegetarian Pizza','Veggie sauce, onions, tomatoes, sweet corn & mushrooms'],
-    ['Hot & Spicy Pizza','Spicy chicken, onion, tomato & mix peppers'],
-  ].map(([name,description],i)=>({id:nid(),categoryId:'pizza-regular',categoryGroup:'pizza-regular',name,description,sizes:REG_SIZES(),available:true,icon:'🍕',badge: i===5?'⭐ Bestseller':(i===10?'🔥 Spicy':null)})),
-  ...[
-    ['Mexico Special','Chicken, cheese, crust with kebabs and all veges'],
-    ['Supreme Special','Chicken, cheese, bell pepper, tomatoes, olives & special sauces'],
-    ['Malai Boti Pizza','Malai boti chicken, cheese, sweet corn & bell peppers'],
-    ['Fajita Siclian','Chicken, cheese, bell peppers, jalapeno & olives'],
-    ['Bihari Kebab Pizza','Chicken, cheese, kebab and all the veges'],
-    ['Lazania Pizza','Chicken, cheese, kebab and all the veges'],
-    ['Chicken Extreme','Chicken, cheese, bell peppers with special sauces'],
-    ['Square Pizza','Chicken, cheese, all the veges & special sauces'],
-  ].map(([name,description],i)=>({id:nid(),categoryId:'pizza-special',categoryGroup:'pizza-special',name,description,sizes:SPECIAL_SIZES(),available:true,icon:'🍕',badge:i===0?'⭐ Bestseller':null})),
-  {id:nid(),categoryId:'pizza-special',categoryGroup:'pizza-special',name:'Chicken Stuffed',description:'Chicken at the top and in the edges of the pizza with veges',price:1599,available:true,icon:'🍕'},
-  {id:nid(),categoryId:'pizza-special',categoryGroup:'pizza-special',name:'Kebab Stuffed',description:'Chicken, kebab in the edges, tomatoes, bell pepper & olives',price:1599,available:true,icon:'🍕'},
-  {id:nid(),categoryId:'pizza-special',categoryGroup:'pizza-special',name:'Your Name Pizza',description:'Add your name to the pizza with your choice of flavour',price:0,available:false,needsPriceReview:true,icon:'🍕'},
-  ...[['Zinger Burger Jambo',380],['Black Zinger Burger',400],['Red Zinger Burger',400],['Zinger Tower Burger',600],['Zinger Burger (Cheese)',450],['Chicken Burger',330],['Chicken Burger (Cheese)',350],['Chapli Burger',350],['Chapli Burger (Cheese)',400]]
-    .map(([name,price],i)=>({id:nid(),categoryId:'burgers',categoryGroup:'burger',name,price,available:true,icon:'🍔',badge:i===0?'⭐ Bestseller':null})),
-  ...[['Hot Wings',[['6 pc',350],['12 pc',600]]],['Oven Baked Wings',[['6 pc',350],['12 pc',650]]],['Bar B.Q Wings',[['6 pc',350],['12 pc',650]]],['Nuggets',[['6 pc',350],['12 pc',630]]]]
-    .map(([name,sizes])=>({id:nid(),categoryId:'wings-nuggets',categoryGroup:'wings',name,sizes:sizes.map(([label,price])=>({label,price})),available:true,icon:'🍗'})),
-  ...[['Medium Fries',300],['Large Fries',400],['Cheesy Fries',600],['Cremey Fries',400]]
-    .map(([name,price])=>({id:nid(),categoryId:'wings-nuggets',categoryGroup:'wings',name,price,available:true,icon:'🍟'})),
-  ...[['Mexico Special Pasta',[['Half',350],['Full',650]]],['Crunchy Pasta',[['Half',400],['Full',750]]],['Veges Pasta',[['Half',300],['Full',600]]]]
-    .map(([name,sizes])=>({id:nid(),categoryId:'pasta-sides',categoryGroup:'pasta',name,sizes:sizes.map(([label,price])=>({label,price})),available:true,icon:'🍝'})),
-  {id:nid(),categoryId:'pasta-sides',categoryGroup:'pasta',name:'Cheese Stick',sizes:[{label:'Small',price:600},{label:'Large',price:999}],available:true,icon:'🧀'},
-  {id:nid(),categoryId:'pasta-sides',categoryGroup:'pasta',name:'Loaded Fries',sizes:[{label:'Half',price:350},{label:'Full',price:650}],available:true,icon:'🍟'},
-  {id:'paratha-roll',categoryId:'rolls-shawarma',categoryGroup:'rolls',name:'Paratha Roll',price:0,available:false,needsPriceReview:true,icon:'🌯'},
-  {id:'chicken-shawarma',categoryId:'rolls-shawarma',categoryGroup:'rolls',name:'Chicken Shawarma',price:0,available:false,needsPriceReview:true,icon:'🌯'},
-];
-
-const DEFAULT_DEALS = [
-  {id:'d1',name:'Deal 1',price:599,active:true,items:[{label:'1 Paratha Roll',qty:1},{label:'1 Chicken Burger',qty:1},{label:'1 500ml Drink',qty:1}]},
-  {id:'d2',name:'Deal 2',price:649,active:true,items:[{label:'1 Zinger Burger',qty:1},{label:'1 Chicken Shawarma',qty:1},{label:'1 500ml Drink',qty:1}]},
-  {id:'d3',name:'Deal 3',price:849,active:true,items:[{label:'1 Zinger Burger',qty:1},{label:'1 Paratha Roll',qty:1},{label:'1 Chicken Shawarma',qty:1},{label:'1 500ml Drink',qty:1}]},
-  {id:'d4',name:'Deal 4',price:799,active:true,items:[{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 Paratha Roll',qty:1},{label:'1 500ml Drink',qty:1}]},
-  {id:'d5',name:'Deal 5',price:599,active:true,ribbon:'🔥 Popular',items:[{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 500ml Drink',qty:1}]},
-  {id:'d6',name:'2 Small Pizza Deal',price:999,active:true,items:[{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 Small Pizza',qty:1,chooseFlavor:true}]},
-  {id:'d7',name:'Deal 7',price:1649,active:true,items:[{label:'1 Medium Pizza',qty:1,chooseFlavor:true},{label:'1 Zinger Burger',qty:1},{label:'1 Chicken Shawarma',qty:1},{label:'1.5 Ltr Drink',qty:1}]},
-  {id:'d8',name:'Deal 8',price:1999,active:true,items:[{label:'1 Large Pizza',qty:1,chooseFlavor:true},{label:'12 Hot Wings',qty:1},{label:'1.5 Ltr Drink',qty:1}]},
-  {id:'d9',name:'Deal 9',price:1449,active:true,items:[{label:'1 Large Pizza',qty:1,chooseFlavor:true},{label:'1 Ltr Drink',qty:1}]},
-  {id:'d10',name:'Deal 10',price:1599,active:true,items:[{label:'1 Medium Pizza',qty:1,chooseFlavor:true},{label:'6 Hot Wings',qty:1},{label:'Regular Fries',qty:1},{label:'1 Ltr Drink',qty:1}]},
-  {id:'d11',name:'Deal 11',price:1499,active:true,items:[{label:'4 Zinger Burger',qty:4},{label:'1 Ltr Drink',qty:1}]},
-  {id:'d12',name:'2 Medium Pizza Deal',price:1799,active:true,items:[{label:'1 Medium Pizza',qty:1,chooseFlavor:true},{label:'1 Medium Pizza',qty:1,chooseFlavor:true}]},
-  {id:'big1',name:'Big Deal 1',price:2799,active:true,ribbon:'🔥 Best Value',items:[{label:'1 Large Pizza',qty:1,chooseFlavor:true},{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 Zinger Burger',qty:1},{label:'1 Chicken Burger',qty:1},{label:'1 Paratha Roll',qty:1},{label:'1.5 Ltr Drink',qty:1}]},
-  {id:'big2',name:'Big Deal 2',price:4699,active:true,items:[{label:'2 Large Pizza',qty:2,chooseFlavor:true},{label:'2 Zinger Burger',qty:2},{label:'2 Chicken Burger',qty:2},{label:'2 Chicken Shawarma',qty:2},{label:'2 Paratha Roll',qty:2},{label:'1.5 Ltr Drink',qty:1}]},
-  {id:'family',name:'Family Deal',price:6199,active:true,ribbon:'👨‍👩‍👧 Family Favorite',items:[{label:'3 Large Pizza',qty:3,chooseFlavor:true},{label:'12 Hot Wings',qty:1},{label:'4 Zinger Burger',qty:4},{label:'1 Regular Fries',qty:1},{label:'2 x 1.5 Ltr Drink',qty:2}]},
-  {id:'deal6fam',name:'Large + Small Pizza',price:1799,active:true,items:[{label:'1 Large Pizza',qty:1,chooseFlavor:true},{label:'1 Small Pizza',qty:1,chooseFlavor:true},{label:'1 Ltr Drink',qty:1}]},
-  {id:'midnight',name:'Mid Night Deal',price:2499,active:true,ribbon:'🌙 Late Night',items:[{label:'2 Large Pizza',qty:2,chooseFlavor:true},{label:'1.5 Ltr Drink',qty:1}]},
-];
-
-const DEFAULT_TABLES = [
-  ...Array.from({length:10},(_,i)=>({id:'g'+(i+1),hall:'Gents',number:i+1,status: i===2?'occupied':(i===6?'reserved':'free')})),
-  ...Array.from({length:8},(_,i)=>({id:'f'+(i+1),hall:'Family',number:i+1,status: i===1?'occupied':'free'})),
-];
-
-const DEFAULT_MEDIA = []; // add real photos/videos here later via the Admin Panel
-
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+const FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "YOUR_API_KEY";
+if(!FIREBASE_CONFIGURED){
+  document.getElementById('splash').innerHTML = `<div style="max-width:300px;text-align:center;padding:20px">
+    <div class="smark" style="margin:0 auto 14px;font-size:28px">⚠️</div>
+    <p style="font-weight:700;margin:0 0 8px">Firebase isn't configured yet</p>
+    <p style="font-size:12.5px;opacity:0.9;margin:0">Open this file, paste your Firebase config near the top of the &lt;script&gt; section, then reload this page.</p>
+  </div>`;
+}
+if(FIREBASE_CONFIGURED){
+  firebase.initializeApp(firebaseConfig);
+}
+const db = FIREBASE_CONFIGURED ? firebase.firestore() : null;
+const auth = FIREBASE_CONFIGURED ? firebase.auth() : null;
+const storage = FIREBASE_CONFIGURED ? firebase.storage() : null;
+if(FIREBASE_CONFIGURED){ try{ db.enablePersistence({synchronizeTabs:true}); }catch(e){} }
+</script>
+<script>
 const RESTAURANT = { name:"Mexico Pizza", easypaisaNumber:"03XX-XXXXXXX", easypaisaAccountName:"Mexico Pizza" };
 
 /* ============================================================
    STORE — local stand-in for the future Firestore layer.
-   Every method returns a Promise on purpose, so the calling
-   code below is already written the way it will work once
-   these are swapped for real Firestore calls.
+   Every method talks to Firestore directly. Live listeners
+   (onSnapshot) mean the Admin Panel and Kitchen Page editing
+   the same project will reflect here automatically — on any
+   device, not just other tabs on this one.
    ============================================================ */
 const LS = {
   get(k,d){ try{ const v = localStorage.getItem('mp_'+k); return v?JSON.parse(v):d; }catch(e){return d;} },
@@ -488,72 +421,24 @@ const LS = {
 };
 function uid8(){ return Math.random().toString(36).slice(2,10); }
 
-const Store = (function(){
-  function seedIfEmpty(key, defaults){
-    if(LS.get(key, null)===null) LS.set(key, defaults);
+let myUid = null;
+const Store = {
+  placeOrder(order){
+    order.uid = myUid;
+    order.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    return db.collection('orders').add(order);
+  },
+  updateOrder(id, patch){ return db.collection('orders').doc(id).update(patch); },
+  addReservation(res){
+    res.uid = myUid;
+    res.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    return db.collection('reservations').add(res);
+  },
+  uploadPaymentScreenshot(orderId, file){
+    const path = 'payment-proofs/'+orderId+'/'+Date.now()+'_'+file.name;
+    return storage.ref().child(path).put(file).then(snap=>snap.ref.getDownloadURL());
   }
-  seedIfEmpty('categories', DEFAULT_CATEGORIES);
-  seedIfEmpty('products', DEFAULT_PRODUCTS);
-  seedIfEmpty('deals', DEFAULT_DEALS);
-  seedIfEmpty('tables', DEFAULT_TABLES);
-  seedIfEmpty('media', DEFAULT_MEDIA);
-  seedIfEmpty('orders', []);
-  seedIfEmpty('reservations', []);
-
-  return {
-    getCategories(){ return Promise.resolve(LS.get('categories', DEFAULT_CATEGORIES)); },
-    getProducts(){ return Promise.resolve(LS.get('products', DEFAULT_PRODUCTS)); },
-    getDeals(){ return Promise.resolve(LS.get('deals', DEFAULT_DEALS).filter(d=>d.active!==false)); },
-    getTables(){ return Promise.resolve(LS.get('tables', DEFAULT_TABLES)); },
-    getMedia(){ return Promise.resolve(LS.get('media', DEFAULT_MEDIA).filter(m=>m.active!==false)); },
-    placeOrder(order){
-      const orders = LS.get('orders', []);
-      order.id = 'ord_'+uid8();
-      order.createdAt = Date.now();
-      orders.unshift(order); LS.set('orders', orders);
-      return Promise.resolve(order);
-    },
-    getMyOrders(){ return Promise.resolve(LS.get('orders', [])); },
-    updateOrder(id, patch){
-      const orders = LS.get('orders', []);
-      const o = orders.find(x=>x.id===id);
-      if(o) Object.assign(o, patch);
-      LS.set('orders', orders);
-      return Promise.resolve(o);
-    },
-    addReservation(res){
-      const reservations = LS.get('reservations', []);
-      res.id = 'res_'+uid8(); res.createdAt = Date.now();
-      reservations.unshift(res); LS.set('reservations', reservations);
-      return Promise.resolve(res);
-    }
-  };
-})();
-
-/* Live refresh when the Admin Panel / Kitchen Page change shared data in
-   another tab (only works when all apps are served from the same origin,
-   e.g. via a local server or once deployed together — harmless otherwise).
-   This same listener pattern is what we'll keep once Firebase replaces
-   localStorage with onSnapshot listeners. */
-window.addEventListener('storage', (e)=>{
-  if(!e.key || e.key.indexOf('mp_')!==0) return;
-  if(e.key==='mp_categories' || e.key==='mp_products'){
-    Promise.all([Store.getCategories(), Store.getProducts()]).then(([cats,prods])=>{
-      state.categories=cats; state.products=prods;
-      if(!cats.find(c=>c.id===state.activeCategoryId)) state.activeCategoryId = cats[0]?cats[0].id:null;
-      renderCategoryChips(); renderProducts();
-    });
-  } else if(e.key==='mp_deals'){
-    Store.getDeals().then(d=>{ state.deals=d; renderDeals(); });
-  } else if(e.key==='mp_tables'){
-    Store.getTables().then(t=>{ state.tables=t; renderHallChips(); renderResTableGrid(); renderOtTableGrid(); });
-  } else if(e.key==='mp_media'){
-    Store.getMedia().then(m=>{ state.media=m; renderPromos(); });
-  } else if(e.key==='mp_orders'){
-    renderOrdersBadgeFromStore();
-    if(!document.getElementById('ordersOverlay').classList.contains('hidden')) renderOrdersBody();
-  }
-});
+};
 
 /* ============================================================
    STATE
@@ -567,6 +452,11 @@ let state = {
   customer: LS.get('customer', {name:'',phone:'',address:''}),
   resHall: 'Gents', resTableSelected:null, resParty:2
 };
+let myOrdersCache = [];
+let otSelectedHall = null;
+let sizeSelection = {}, toppingQty = {};
+let checkoutPayment = null;
+let placingOrder = false;
 
 const STATUS_FLOW = {
   awaiting_confirmation: {label:'Awaiting Confirmation', step:0},
@@ -590,20 +480,63 @@ function toast(msg){
   document.body.appendChild(t);
   setTimeout(()=>t.remove(), 2300);
 }
+function handleFirestoreError(err){
+  console.error('Firestore error', err);
+  toast('Connection issue — check your internet and try again.');
+}
 
 /* ============================================================
-   BOOTSTRAP
+   BOOTSTRAP — live Firestore listeners
    ============================================================ */
-Promise.all([Store.getCategories(), Store.getProducts(), Store.getDeals(), Store.getTables(), Store.getMedia()])
-  .then(([cats,prods,deals,tables,media])=>{
-    state.categories=cats; state.products=prods; state.deals=deals; state.tables=tables; state.media=media;
-    state.activeCategoryId = cats[0] ? cats[0].id : null;
-    renderCategoryChips(); renderProducts(); renderDeals(); renderHallChips(); renderResTableGrid(); renderPromos();
-    document.getElementById('splash').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    initOrderContext();
-    renderCartBadge(); renderOrdersBadgeFromStore();
+function bootstrap(){
+  db.collection('categories').orderBy('sortOrder').onSnapshot(snap=>{
+    state.categories = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!state.categories.find(c=>c.id===state.activeCategoryId)) state.activeCategoryId = state.categories[0] ? state.categories[0].id : null;
+    renderCategoryChips(); renderProducts();
+  }, handleFirestoreError);
+
+  db.collection('products').onSnapshot(snap=>{
+    state.products = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderProducts();
+  }, handleFirestoreError);
+
+  db.collection('deals').where('active','==',true).onSnapshot(snap=>{
+    state.deals = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderDeals();
+  }, handleFirestoreError);
+
+  db.collection('tables').orderBy('number').onSnapshot(snap=>{
+    state.tables = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderHallChips(); renderResTableGrid(); renderOtTableGrid();
+  }, handleFirestoreError);
+
+  db.collection('media').where('active','==',true).onSnapshot(snap=>{
+    state.media = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderPromos();
+  }, handleFirestoreError);
+
+  db.collection('orders').where('uid','==',myUid).onSnapshot(snap=>{
+    myOrdersCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+    myOrdersCache.sort((a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0));
+    renderOrdersBadge();
+    if(!document.getElementById('ordersOverlay').classList.contains('hidden')) renderOrdersBody();
+  }, handleFirestoreError);
+
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  initOrderContext();
+  renderCartBadge();
+}
+
+if(FIREBASE_CONFIGURED){
+  auth.onAuthStateChanged(user=>{
+    if(user){ myUid = user.uid; bootstrap(); }
   });
+  auth.signInAnonymously().catch(err=>{
+    console.error('Auth error', err);
+    toast('Could not connect. Check your internet connection.');
+  });
+}
 
 /* ============================================================
    ORDER TYPE / TABLE CONTEXT
@@ -639,7 +572,6 @@ function openOrderTypeModal(isChange){
   document.getElementById('orderTypeModal').classList.remove('hidden');
 }
 function closeOrderTypeModal(){ document.getElementById('orderTypeModal').classList.add('hidden'); }
-let otSelectedHall = null;
 function renderOtHallChips(){
   const halls = [...new Set(state.tables.map(t=>t.hall))];
   otSelectedHall = otSelectedHall || halls[0];
@@ -683,7 +615,6 @@ function renderCategoryChips(){
 }
 function selectCategory(id){ state.activeCategoryId=id; renderCategoryChips(); renderProducts(); }
 
-let sizeSelection = {}, toppingQty = {};
 function renderProducts(){
   const list = document.getElementById('productList');
   const items = state.products.filter(p=>p.categoryId===state.activeCategoryId);
@@ -805,7 +736,7 @@ function submitReservation(){
     toast('Reservation request sent — we will confirm shortly');
     document.getElementById('resName').value=''; document.getElementById('resPhone').value='';
     state.resTableSelected=null; renderResTableGrid();
-  });
+  }).catch(e=>{ console.error(e); toast('Could not send reservation — check your connection and try again.'); });
 }
 
 /* ============================================================
@@ -858,7 +789,6 @@ function removeCartLine(lineId){ state.cart=state.cart.filter(i=>i.lineId!==line
 /* ============================================================
    CHECKOUT
    ============================================================ */
-let checkoutPayment = null;
 function goToCheckout(){
   if(!state.orderType){ closeCart(); openOrderTypeModal(true); return; }
   document.getElementById('cartSheetTitle').textContent = 'Checkout';
@@ -866,7 +796,8 @@ function goToCheckout(){
 }
 function paymentOptionsFor(type){
   if(type==='delivery') return [{id:'cod',label:'Cash on Delivery',sub:'Pay the rider when your order arrives'},{id:'easypaisa',label:'Easypaisa',sub:'Pay now via Easypaisa transfer'}];
-  return [{id:'cash',label:'Cash',sub:'Pay at the counter / table'},{id:'easypaisa',label:'Easypaisa',sub:'Pay now via Easypaisa transfer'}];
+  if(type==='dine-in') return [{id:'cash',label:'Cash',sub:'Pay after you eat — settle up at your table'},{id:'easypaisa',label:'Easypaisa',sub:'Pay now via Easypaisa transfer'}];
+  return [{id:'cash',label:'Cash',sub:'Pay when you pick up your order'},{id:'easypaisa',label:'Easypaisa',sub:'Pay now via Easypaisa transfer'}];
 }
 function renderCheckoutBody(){
   const body = document.getElementById('cartBody');
@@ -914,6 +845,7 @@ function selectCheckoutPayment(id){
 
 function placeOrder(){
   if(!state.cart.length){ toast('Your cart is empty'); return; }
+  if(placingOrder) return;
   let customer = {};
   if(state.orderType==='delivery'){
     customer = {name:document.getElementById('coName').value.trim(),phone:document.getElementById('coPhone').value.trim(),address:document.getElementById('coAddress').value.trim(),note:document.getElementById('coNote').value.trim()};
@@ -934,33 +866,34 @@ function placeOrder(){
     type: state.orderType, table: state.orderType==='dine-in' ? state.table : null, customer,
     items: state.cart.map(i=>({productId:i.productId||null,dealId:i.dealId||null,isDeal:!!i.isDeal,name:i.name,size:i.size,toppingQty:i.toppingQty,qty:i.qty,unitPrice:i.unitPrice,lineTotal:i.lineTotal*i.qty,dealDetails:i.dealDetails||null})),
     subtotal, deliveryCharge: needsDeliveryCharge ? null : 0, total: needsDeliveryCharge ? null : subtotal,
-    paymentMethod: checkoutPayment, paymentStatus:'unpaid', transactionId:null, status: initialStatus
+    paymentMethod: checkoutPayment, paymentStatus:'unpaid', transactionId:null, paymentScreenshotUrl:null, status: initialStatus
   };
+  placingOrder = true;
   Store.placeOrder(order).then(()=>{
+    placingOrder = false;
     state.cart = []; saveCart(); closeCart(); openOrders();
     toast('Order placed!');
+  }).catch(e=>{
+    placingOrder = false;
+    console.error(e); toast('Could not place order — check your connection and try again.');
   });
 }
 
 /* ============================================================
    ORDERS
    ============================================================ */
-function renderOrdersBadgeFromStore(){
-  Store.getMyOrders().then(orders=>{
-    const active = orders.filter(o=>!['completed','cancelled'].includes(o.status));
-    const badge = document.getElementById('ordersBadge');
-    badge.textContent = active.length; badge.classList.toggle('hidden', active.length===0);
-  });
+function renderOrdersBadge(){
+  const active = myOrdersCache.filter(o=>!['completed','cancelled'].includes(o.status));
+  const badge = document.getElementById('ordersBadge');
+  badge.textContent = active.length; badge.classList.toggle('hidden', active.length===0);
 }
 function openOrders(){ renderOrdersBody(); document.getElementById('ordersOverlay').classList.remove('hidden'); }
 function closeOrders(){ document.getElementById('ordersOverlay').classList.add('hidden'); }
 function renderOrdersBody(){
   const body = document.getElementById('ordersBody');
-  Store.getMyOrders().then(orders=>{
-    if(!orders.length){ body.innerHTML = `<div class="empty-state"><div class="ee">🧾</div><h3>No orders yet</h3><p>Place an order from the Menu or Deals tab and track it here.</p></div>`; return; }
-    body.innerHTML = `<div class="testmode-chip">🧪 Test mode — not on Firebase yet. This stays in sync with Admin/Kitchen only when all three are served from the same address.</div>` + orders.map(renderOrderCard).join('');
-    renderOrdersBadgeFromStore();
-  });
+  if(!myOrdersCache.length){ body.innerHTML = `<div class="empty-state"><div class="ee">🧾</div><h3>No orders yet</h3><p>Place an order from the Menu or Deals tab and track it here.</p></div>`; return; }
+  body.innerHTML = myOrdersCache.map(renderOrderCard).join('');
+  renderOrdersBadge();
 }
 function renderOrderCard(o){
   const flow = STATUS_FLOW[o.status]||{label:o.status, step:0};
@@ -977,9 +910,13 @@ function renderOrderCard(o){
       <div style="font-size:15px;font-weight:800;color:var(--red-deep)">${RESTAURANT.easypaisaNumber}</div>
       <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">${RESTAURANT.easypaisaAccountName}</div>
       <div class="field" style="margin-bottom:8px"><input type="text" id="txn-${o.id}" placeholder="Transaction ID"></div>
-      <button class="btn btn-secondary" onclick="submitTransactionId('${o.id}')">Submit Payment Proof</button></div>`;
+      <div class="field" style="margin-bottom:8px"><label style="font-size:11px">Payment screenshot</label><input type="file" accept="image/*" id="shot-${o.id}"></div>
+      <button class="btn btn-secondary" id="submitbtn-${o.id}" onclick="submitTransactionId('${o.id}')">Submit Payment Proof</button></div>`;
   } else if(o.status==='payment_submitted'){
-    payAction = `<p class="pending-note" style="margin-top:8px">We've received your payment details and are verifying them now.</p>`;
+    payAction = `<div class="list-card" style="background:var(--bg)">
+      <p class="pending-note" style="margin:0 0 8px">We've received your payment details and are verifying them now.</p>
+      ${o.paymentScreenshotUrl?`<a href="${o.paymentScreenshotUrl}" target="_blank"><img src="${o.paymentScreenshotUrl}" style="max-height:140px;border-radius:10px;border:1px solid var(--line)"></a>`:''}
+    </div>`;
   } else if(o.status==='awaiting_confirmation' && o.type==='delivery' && (o.deliveryCharge===null||o.deliveryCharge===undefined)){
     payAction = `<p class="pending-note" style="margin-top:8px">We're confirming your address and will add the delivery charge shortly.</p>`;
   }
@@ -999,18 +936,29 @@ function renderOrderCard(o){
   </div>`;
 }
 function submitTransactionId(orderId){
-  const val = document.getElementById('txn-'+orderId).value.trim();
-  if(!val){ toast('Please enter your transaction ID'); return; }
-  Store.updateOrder(orderId, {transactionId:val, status:'payment_submitted'}).then(()=>{ toast('Payment details submitted'); renderOrdersBody(); });
+  const txnVal = document.getElementById('txn-'+orderId).value.trim();
+  const fileInput = document.getElementById('shot-'+orderId);
+  const file = fileInput && fileInput.files[0];
+  if(!txnVal){ toast('Please enter your transaction ID'); return; }
+  if(!file){ toast('Please attach a screenshot of the payment'); return; }
+  if(file.size > 5*1024*1024){ toast('Screenshot is too large — please use one under 5MB'); return; }
+  const btn = document.getElementById('submitbtn-'+orderId);
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  Store.uploadPaymentScreenshot(orderId, file).then(url=>{
+    return Store.updateOrder(orderId, {transactionId:txnVal, paymentScreenshotUrl:url, status:'payment_submitted'});
+  }).then(()=>{
+    toast('Payment details submitted');
+  }).catch(e=>{
+    console.error(e); toast('Upload failed — check your connection and try again.');
+    btn.disabled = false; btn.textContent = 'Submit Payment Proof';
+  });
 }
 function cancelOrder(orderId){
   if(!confirm('Cancel this order?')) return;
-  Store.updateOrder(orderId, {status:'cancelled'}).then(()=>{ toast('Order cancelled'); renderOrdersBody(); });
+  Store.updateOrder(orderId, {status:'cancelled'}).then(()=>{ toast('Order cancelled'); }).catch(e=>{ console.error(e); toast('Could not cancel — try again.'); });
 }
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registration failed', e)); });
-}
+
 </script>
 </body>
 </html>
