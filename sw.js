@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mexico-pizza-v1';
+const CACHE_NAME = 'mexico-pizza-v2';
 const SHELL_FILES = [
   './index.html',
   './admin.html',
@@ -26,14 +26,21 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first for Firebase/API calls (once connected), cache-first for the app shell.
+// Network-first for Firebase calls (never cache live data), cache-first for the app shell.
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
-  if (url.includes('firestore.googleapis.com') || url.includes('firebasestorage') || url.includes('identitytoolkit') || url.includes('firebaseio.com')) {
-    return; // always go straight to the network for live data, never cache it
+  if (url.includes('firestore.googleapis.com') || url.includes('firebasestorage') || url.includes('identitytoolkit') || url.includes('firebaseio.com') || url.includes('google.com')) {
+    return; // always go straight to the network for live data and auth, never cache it
   }
   event.respondWith(
     caches.match(event.request).then((cached) => {
+      // network-first for our own HTML files so updates show up without a stale cache fight
+      if (event.request.mode === 'navigate' || url.endsWith('.html')) {
+        return fetch(event.request).then((resp) => {
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resp.clone()));
+          return resp;
+        }).catch(() => cached);
+      }
       if (cached) return cached;
       return fetch(event.request).catch(() => cached);
     })

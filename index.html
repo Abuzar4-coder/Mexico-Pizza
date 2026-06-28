@@ -6,6 +6,9 @@
 <title>Mexico Pizza — Order Online</title>
 <meta name="description" content="Order pizza, burgers, wings and more from Mexico Pizza — Burger & Fried Chicken.">
 <meta name="theme-color" content="#E8341C">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -947,7 +950,9 @@ function cancelOrder(orderId){
   Store.updateOrder(orderId, {status:'cancelled'}).then(()=>{ toast('Order cancelled'); }).catch(e=>{ console.error(e); toast('Could not cancel — try again.'); });
 }
 
-
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registration failed', e)); });
+}
 </script>
 </body>
 </html>

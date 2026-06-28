@@ -1,13 +1,15 @@
 {
   "name": "Mexico Pizza - Order Online",
   "short_name": "Mexico Pizza",
-  "description": "Order pizza, burgers, wings and more from Mexico Pizza — Burger & Fried Chicken.",
+  "description": "Order pizza, burgers, wings and more from Mexico Pizza — Burger & Fried Chicken. Browse the menu, grab a deal, and track your order live.",
+  "id": "/index.html",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#FFF8F2",
   "theme_color": "#E8341C",
   "orientation": "portrait",
+  "lang": "en",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
