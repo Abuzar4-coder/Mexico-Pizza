@@ -34,7 +34,6 @@ button{font-family:inherit;cursor:pointer;}
 .brand-mark{width:38px;height:38px;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;color:var(--red);font-size:14px;}
 .brand-name{font-family:'Poppins';font-weight:700;font-size:16px;}
 .pending-count{background:var(--gold);color:#3a2400;font-weight:800;font-size:13px;border-radius:30px;padding:7px 14px;}
-.logout-btn{background:rgba(255,255,255,0.16);border:none;color:#fff;border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700;margin-left:8px;}
 
 .view{padding:16px;}
 .section-title{font-family:'Poppins';font-size:18px;font-weight:700;margin:4px 0 12px;}
@@ -67,31 +66,14 @@ button{font-family:inherit;cursor:pointer;}
 
 .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:30px;font-size:13px;font-weight:600;z-index:150;box-shadow:var(--shadow-lift);max-width:86%;text-align:center;}
 
-#loginScreen{position:fixed;inset:0;background:var(--grad-hero);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;}
-#loginScreen .lmark{width:64px;height:64px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;color:var(--red);font-size:22px;margin-bottom:10px;}
-#loginScreen h1{font-size:20px;margin:6px 0 2px;text-align:center;}
-#loginScreen p{color:#cbb8ac;font-size:12.5px;margin:0 0 22px;text-align:center;}
-.kitchen-login-btn{background:var(--grad-cta);color:#fff;border:none;border-radius:30px;padding:16px 30px;font-weight:800;font-size:15px;box-shadow:var(--shadow-lift);}
 </style>
 </head>
 <body>
 
-<div id="loginScreen">
-  <div class="lmark">👨‍🍳</div>
-  <h1>Mexico Pizza — Kitchen</h1>
-  <p>Sign in with the account your owner created for you.</p>
-  <div style="width:100%;max-width:300px">
-    <div class="field" style="text-align:left;margin-bottom:14px"><label style="color:#cbb8ac;display:block;font-size:11.5px;font-weight:700;margin-bottom:5px">Email</label><input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="username" style="width:100%;border:1.5px solid var(--line);border-radius:11px;padding:11px;font-size:14px;background:rgba(255,255,255,0.95);"></div>
-    <div class="field" style="text-align:left;margin-bottom:14px"><label style="color:#cbb8ac;display:block;font-size:11.5px;font-weight:700;margin-bottom:5px">Password</label><input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;border:1.5px solid var(--line);border-radius:11px;padding:11px;font-size:14px;background:rgba(255,255,255,0.95);"></div>
-    <button class="kitchen-login-btn" id="loginBtn" onclick="doLogin()" style="width:100%">Log In</button>
-    <p id="loginError" class="hidden" style="color:#ff9d8a;font-size:12px;margin-top:12px;text-align:center"></p>
-  </div>
-</div>
-
 <div id="app" class="hidden">
   <div class="topbar">
     <div class="brand"><div class="brand-mark">MP</div><div class="brand-name">Kitchen Queue</div></div>
-    <div style="display:flex;align-items:center"><span class="pending-count" id="pendingCount">0 pending</span><button class="logout-btn" onclick="logout()">Logout</button></div>
+    <div style="display:flex;align-items:center"><span class="pending-count" id="pendingCount">0 pending</span></div>
   </div>
   <div class="view">
     <h2 class="section-title">🔥 Cooking Now</h2>
@@ -103,7 +85,6 @@ button{font-family:inherit;cursor:pointer;}
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 /* ============================================================
    FIREBASE CONFIG — use the EXACT SAME config as index.html
@@ -119,15 +100,14 @@ const firebaseConfig = {
 };
 const FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "YOUR_API_KEY";
 if(!FIREBASE_CONFIGURED){
-  document.getElementById('loginScreen').innerHTML = `<div style="max-width:300px;text-align:center;padding:20px">
-    <div class="lmark" style="margin:0 auto 14px;font-size:28px">⚠️</div>
+  document.body.innerHTML = `<div style="max-width:300px;text-align:center;padding:60px 20px;margin:0 auto;font-family:sans-serif">
+    <div style="font-size:28px;margin-bottom:14px">⚠️</div>
     <p style="font-weight:700">Firebase isn't configured yet</p>
-    <p style="font-size:12.5px;opacity:0.9">Open this file, paste your Firebase config near the top of the &lt;script&gt; section, then reload.</p>
+    <p style="font-size:12.5px;opacity:0.7">Open this file, paste your Firebase config near the top of the &lt;script&gt; section, then reload.</p>
   </div>`;
 }
 if(FIREBASE_CONFIGURED){ firebase.initializeApp(firebaseConfig); }
 const db = FIREBASE_CONFIGURED ? firebase.firestore() : null;
-const auth = FIREBASE_CONFIGURED ? firebase.auth() : null;
 </script>
 <script>
 function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
@@ -140,50 +120,17 @@ function timeAgo(ts){
   return Math.floor(s/3600)+'h ago';
 }
 function money(n){ return 'Rs '+Math.round(n).toLocaleString('en-PK'); }
-
-function doLogin(){
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const errEl = document.getElementById('loginError');
-  errEl.classList.add('hidden');
-  if(!email || !password){ errEl.textContent='Enter your email and password'; errEl.classList.remove('hidden'); return; }
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true; btn.textContent = 'Logging in…';
-  auth.signInWithEmailAndPassword(email, password).catch(err=>{
-    console.error(err);
-    errEl.textContent = 'Login failed — check your email and password.';
-    errEl.classList.remove('hidden');
-    btn.disabled = false; btn.textContent = 'Log In';
-  });
-}
-function logout(){ auth.signOut(); }
-
-if(FIREBASE_CONFIGURED){
-  auth.onAuthStateChanged(user=>{
-    const btn = document.getElementById('loginBtn');
-    if(btn){ btn.disabled = false; btn.textContent = 'Log In'; }
-    if(!user){
-      document.getElementById('loginScreen').classList.remove('hidden');
-      document.getElementById('app').classList.add('hidden');
-      return;
-    }
-    db.collection('staff').doc(user.uid).get().then(doc=>{
-      if(!doc.exists){
-        const errEl = document.getElementById('loginError');
-        errEl.textContent = 'This account is not authorized for the kitchen queue.';
-        errEl.classList.remove('hidden');
-        auth.signOut();
-        return;
-      }
-      document.getElementById('loginScreen').classList.add('hidden');
-      document.getElementById('app').classList.remove('hidden');
-      bootstrap();
-    }).catch(err=>{ console.error(err); toast('Could not verify your account — try again.'); auth.signOut(); });
-  });
-}
-
 let allOrders = [];
 let bootstrapped = false;
+
+/* No login for now — anyone with this link has full kitchen access.
+   See firestore.rules and FIREBASE-SETUP.md if you want to add
+   real login back later. */
+if(FIREBASE_CONFIGURED){
+  document.getElementById('app').classList.remove('hidden');
+  bootstrap();
+}
+
 function bootstrap(){
   if(bootstrapped) return;
   bootstrapped = true;
