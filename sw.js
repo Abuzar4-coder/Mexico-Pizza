@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mexico-pizza-v2';
+const CACHE_NAME = 'mexico-pizza-v3';
 const SHELL_FILES = [
   './index.html',
   './admin.html',
