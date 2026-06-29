@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mexico-pizza-v3';
+const CACHE_NAME = 'mexico-pizza-v4';
 const SHELL_FILES = [
   './index.html',
   './admin.html',
@@ -6,8 +6,8 @@ const SHELL_FILES = [
   './manifest.json',
   './manifest-admin.json',
   './manifest-kitchen.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {

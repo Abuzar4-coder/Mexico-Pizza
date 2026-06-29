@@ -11,19 +11,19 @@
   "orientation": "portrait",
   "lang": "en",
   "icons": [
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "screenshots": [
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icons/screenshot-menu.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "Browse the full menu and order in a few taps" }
+    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/screenshot-menu.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "Browse the full menu and order in a few taps" }
   ]
 }
