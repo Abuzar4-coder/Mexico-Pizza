@@ -13,12 +13,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   STANDALONE TEST BUILD — no Firebase yet. Reads/writes the
-   same localStorage keys as the Customer App and Kitchen Page,
-   so if you serve all three from the same local server/folder
-   you'll see live updates flow between them. Once Firebase is
-   wired in, this same Store interface gets swapped to Firestore
-   and everything keeps working the same way.
+   MEXICO PIZZA — ADMIN PANEL
+   Connects to Firebase (Firestore). No login currently — see
+   firestore.rules. Manage menu, deals, tables, promos, and
+   confirm/track orders live, in sync with the Customer App and
+   Kitchen Page through the same Firebase project.
    ============================================================ */
 :root{
   --red:#E8341C; --red-deep:#B71F0E; --orange:#FF7A1A; --gold:#FFC400;
@@ -863,7 +862,7 @@ function openMediaForm(){
 function closeForm(){ document.getElementById('formOverlay').classList.add('hidden'); }
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registration failed', e)); });
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw-admin.js', {scope: './admin.html'}).catch(e=>console.warn('SW failed', e)); });
 }
 </script>
 </body>

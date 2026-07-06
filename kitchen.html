@@ -12,9 +12,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* Standalone test build — shares the same mp_orders localStorage key
-   as the Customer App and Admin Panel. When served from the same
-   origin, confirming an order in Admin makes it appear here live. */
+/* MEXICO PIZZA — KITCHEN QUEUE
+   Connects to Firebase (Firestore). No login currently — see
+   firestore.rules. Live queue of confirmed orders, in sync with
+   the Customer App and Admin Panel through the same project. */
 :root{
   --red:#E8341C; --red-deep:#B71F0E; --orange:#FF7A1A; --gold:#FFC400;
   --ink:#241A14; --ink-soft:#8A7568; --paper:#FFFFFF; --bg:#FFF8F2; --line:#F1E3D4;
@@ -185,7 +186,7 @@ function markReady(id){
 }
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registration failed', e)); });
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw-kitchen.js', {scope: './kitchen.html'}).catch(e=>console.warn('SW failed', e)); });
 }
 </script>
 </body>
