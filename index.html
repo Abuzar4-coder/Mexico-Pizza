@@ -1010,7 +1010,7 @@ if('serviceWorker' in navigator){
         Firebase) that holds the real key and forwards requests.
    Get a key free at https://aistudio.google.com/apikey
    ============================================================ */
-const GEMINI_API_KEY = "AQ.Ab8RN6IhU4zljtikMmMa0WPoqtbscTNhYtrUQNgNIWfoc4suHA";
+const GEMINI_API_KEY = "AQ.Ab8RN6LSlDuTfCQTd47Ta8QWfzMpulFo0RbImE-8evq-JY8uBA";
 const GEMINI_MODEL = "gemini-3.1-flash-lite"; // built for low latency — the right choice for a live chat
 const GEMINI_FALLBACK_MODEL = "gemini-flash-latest"; // more capable but slower, used only if the fast model fails
 function geminiUrl(model){ return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`; }
