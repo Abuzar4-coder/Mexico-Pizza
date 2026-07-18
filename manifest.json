@@ -2,28 +2,28 @@
   "name": "Mexico Pizza - Order Online",
   "short_name": "Mexico Pizza",
   "description": "Order pizza, burgers, wings and more from Mexico Pizza — Burger & Fried Chicken. Browse the menu, grab a deal, and track your order live.",
-  "id": "https://abuzar4-coder.github.io/Mexico-Pizza/index.html",
-  "start_url": "https://abuzar4-coder.github.io/Mexico-Pizza/index.html",
-  "scope": "https://abuzar4-coder.github.io/Mexico-Pizza/",
+  "id": "https://mexicopizza.online/index.html",
+  "start_url": "https://mexicopizza.online/index.html",
+  "scope": "https://mexicopizza.online/",
   "display": "standalone",
   "background_color": "#FFF8F2",
   "theme_color": "#E8341C",
   "orientation": "portrait",
   "lang": "en",
   "icons": [
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "https://mexicopizza.online/icon-48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
+    { "src": "https://mexicopizza.online/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
+    { "src": "https://mexicopizza.online/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "https://mexicopizza.online/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "https://mexicopizza.online/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "https://mexicopizza.online/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "https://mexicopizza.online/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "https://mexicopizza.online/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "https://mexicopizza.online/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "https://mexicopizza.online/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "https://mexicopizza.online/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "screenshots": [
-    { "src": "https://abuzar4-coder.github.io/Mexico-Pizza/screenshot-menu.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "Browse the full menu and order in a few taps" }
+    { "src": "https://mexicopizza.online/screenshot-menu.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "Browse the full menu and order in a few taps" }
   ]
 }

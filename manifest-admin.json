@@ -2,9 +2,9 @@
   "name": "Mexico Pizza - Admin Panel",
   "short_name": "MP Admin",
   "description": "Admin panel for Mexico Pizza \u2014 manage menu, deals, tables, promos, and confirm live orders.",
-  "id": "https://abuzar4-coder.github.io/Mexico-Pizza/admin.html",
-  "start_url": "https://abuzar4-coder.github.io/Mexico-Pizza/admin.html",
-  "scope": "https://abuzar4-coder.github.io/Mexico-Pizza/admin.html",
+  "id": "https://mexicopizza.online/admin.html",
+  "start_url": "https://mexicopizza.online/admin.html",
+  "scope": "https://mexicopizza.online/admin.html",
   "display": "standalone",
   "background_color": "#FFF8F2",
   "theme_color": "#241A14",
@@ -12,67 +12,67 @@
   "lang": "en",
   "icons": [
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-48.png",
+      "src": "https://mexicopizza.online/icon-48.png",
       "sizes": "48x48",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-72.png",
+      "src": "https://mexicopizza.online/icon-72.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-96.png",
+      "src": "https://mexicopizza.online/icon-96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-128.png",
+      "src": "https://mexicopizza.online/icon-128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-144.png",
+      "src": "https://mexicopizza.online/icon-144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-152.png",
+      "src": "https://mexicopizza.online/icon-152.png",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-192.png",
+      "src": "https://mexicopizza.online/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-384.png",
+      "src": "https://mexicopizza.online/icon-384.png",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-512.png",
+      "src": "https://mexicopizza.online/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-192-maskable.png",
+      "src": "https://mexicopizza.online/icon-192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "https://abuzar4-coder.github.io/Mexico-Pizza/icon-512-maskable.png",
+      "src": "https://mexicopizza.online/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
