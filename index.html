@@ -749,14 +749,23 @@ function getYouTubeEmbedUrl(url){
   }
   return null;
 }
+function getTikTokEmbedUrl(url){
+  if(!url) return null;
+  const match = url.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/) || url.match(/tiktok\.com\/embed\/(?:v2\/)?(\d+)/);
+  if(match) return `https://www.tiktok.com/player/v1/${match[1]}`;
+  return null;
+}
 function renderPromos(){
   const list = document.getElementById('promoList');
   if(!state.media.length){ list.innerHTML = `<div class="empty-state"><div class="ee">🎬</div><h3>Nothing posted yet</h3><p>Our latest photos and videos will show up here once the owner uploads them from the Admin Panel.</p></div>`; return; }
   list.innerHTML = state.media.map(m=>{
     let mediaHtml;
     const ytEmbed = m.type==='video' ? getYouTubeEmbedUrl(m.url) : null;
+    const ttEmbed = m.type==='video' ? getTikTokEmbedUrl(m.url) : null;
     if(ytEmbed){
       mediaHtml = `<div style="position:relative;padding-top:56.25%"><iframe src="${ytEmbed}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+    } else if(ttEmbed){
+      mediaHtml = `<div style="position:relative;padding-top:177%;max-width:325px;margin:0 auto"><iframe src="${ttEmbed}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="encrypted-media" allowfullscreen loading="lazy"></iframe></div>`;
     } else if(m.type==='video'){
       mediaHtml = `<video src="${m.url}" controls playsinline></video>`;
     } else {

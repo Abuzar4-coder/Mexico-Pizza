@@ -848,7 +848,7 @@ function openMediaForm(){
     <div class="field"><label>Type</label><select id="fMediaType"><option value="image">Image</option><option value="video">Video</option></select></div>
     <div class="field"><label>Media URL</label><input id="fMediaUrl" placeholder="https://..."></div>
     <div class="field"><label>Caption (optional)</label><input id="fMediaCaption" placeholder="e.g. New Bihari Kebab Pizza is here!"></div>
-    <p class="muted">🧪 Paste a link to an already-hosted photo, a direct video file (.mp4), or a YouTube link — YouTube links now embed automatically.</p>
+    <p class="muted">🧪 Paste a link to an already-hosted photo, a direct video file (.mp4), a YouTube link, or a TikTok link — all embed automatically. For TikTok, use the full link with /video/ in it (open the video and tap Share → Copy Link), not a shortened vm.tiktok.com link.</p>
   `;
   document.getElementById('formSaveBtn').onclick = ()=>{
     const url = document.getElementById('fMediaUrl').value.trim();
