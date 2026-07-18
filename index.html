@@ -244,6 +244,27 @@ img{max-width:100%;display:block;}
 .promo-card video,.promo-card img{width:100%;display:block;background:#000;}
 .promo-cap{padding:11px 14px;font-size:13px;color:var(--ink-soft);}
 
+/* ============================================================
+   AI ORDER ASSISTANT — chat widget
+   ============================================================ */
+.chat-fab{position:fixed;right:16px;bottom:calc(78px + var(--safe-bottom));max-width:560px;margin:0 auto;z-index:45;width:54px;height:54px;border-radius:50%;border:none;background:var(--grad-cta);color:#fff;font-size:23px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 22px rgba(232,52,28,0.4);}
+.chat-fab:active{transform:scale(0.95);}
+.chat-sheet{max-height:88vh;height:82vh;display:flex;flex-direction:column;}
+.chat-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.chat-bubble{max-width:82%;padding:10px 13px;border-radius:16px;font-size:13.5px;line-height:1.5;white-space:pre-wrap;}
+.chat-bubble.user{align-self:flex-end;background:var(--grad-cta);color:#fff;border-bottom-right-radius:4px;}
+.chat-bubble.bot{align-self:flex-start;background:var(--paper);color:var(--ink);box-shadow:var(--shadow);border-bottom-left-radius:4px;}
+.chat-bubble.typing{display:flex;gap:4px;align-items:center;padding:13px;}
+.chat-bubble.typing span{width:6px;height:6px;border-radius:50%;background:var(--ink-soft);opacity:0.5;animation:chatDot 1s infinite;}
+.chat-bubble.typing span:nth-child(2){animation-delay:0.15s;}
+.chat-bubble.typing span:nth-child(3){animation-delay:0.3s;}
+@keyframes chatDot{0%,60%,100%{opacity:0.3;transform:translateY(0);}30%{opacity:1;transform:translateY(-3px);}}
+.chat-inputbar{display:flex;gap:8px;padding:12px 14px calc(12px + var(--safe-bottom));border-top:1px solid var(--line);background:var(--bg);}
+.chat-inputbar input{flex:1;border:1.5px solid var(--line);border-radius:24px;padding:11px 16px;font-size:14px;background:var(--paper);color:var(--ink);}
+.chat-inputbar input:focus{outline:none;border-color:var(--red);}
+.chat-send{width:44px;height:44px;flex-shrink:0;border-radius:50%;border:none;background:var(--grad-cta);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 12px rgba(232,52,28,0.32);}
+.chat-send[disabled]{opacity:0.6;}
+
 #splash{position:fixed;inset:0;background:var(--grad-hero);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;}
 #splash .smark{width:68px;height:68px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:800;color:var(--red);font-size:24px;margin-bottom:14px;box-shadow:0 8px 20px rgba(0,0,0,0.25);}
 #splash p{font-family:'Poppins';font-size:15px;}
@@ -328,6 +349,8 @@ img{max-width:100%;display:block;}
     <button class="nav-btn" data-tab="reservations" onclick="switchTab('reservations')"><span class="ni">🪑</span>Reserve</button>
     <button class="nav-btn" data-tab="promos" onclick="switchTab('promos')"><span class="ni">🎬</span>Promos</button>
   </div>
+
+  <button class="chat-fab" id="chatFab" onclick="openChatAgent()" aria-label="Chat with our order assistant">💬</button>
 </div>
 
 <div class="fullmodal hidden" id="orderTypeModal">
@@ -369,6 +392,18 @@ img{max-width:100%;display:block;}
     <div class="sheet-head"><h3 id="pickerTitle">Choose</h3><button class="sheet-close" onclick="closePicker()">✕</button></div>
     <div class="sheet-body" id="pickerBody"></div>
     <div class="sheet-foot"><button class="btn btn-primary" id="pickerConfirmBtn">Confirm</button></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="chatOverlay">
+  <div class="sheet chat-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3>🌮 Order Assistant</h3><button class="sheet-close" onclick="closeChatAgent()">✕</button></div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-inputbar">
+      <input type="text" id="chatInput" placeholder="Ask about the menu, deals, prices…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();sendChatMessage();}">
+      <button class="chat-send" id="chatSendBtn" onclick="sendChatMessage()">➤</button>
+    </div>
   </div>
 </div>
 
@@ -951,6 +986,340 @@ function cancelOrder(orderId){
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registration failed', e)); });
+}
+</script>
+
+<script>
+/* ============================================================
+   AI ORDER ASSISTANT — powered by Google Gemini
+   ------------------------------------------------------------
+   ⚠️ SECURITY NOTE — read before you ship this
+   This is a static site (GitHub Pages, no backend), so this API
+   key is embedded in code that is sent to every visitor's browser.
+   Anyone can open dev tools → view-source, copy the key, and use
+   your Gemini quota/billing from outside your app. This is the
+   same tradeoff you already made with the Firebase config above —
+   but Firebase is safe to expose because access is controlled by
+   firestore.rules, whereas a Gemini key is a direct credential.
+   For a real launch:
+     1. In Google AI Studio, set an API key restriction (HTTP
+        referrers = your github.io domain) and a daily quota/budget
+        cap, so a leaked key can't be used elsewhere or run up a bill.
+     2. Better: proxy this fetch() through a small server you control
+        (a Firebase Cloud Function works well since you already use
+        Firebase) that holds the real key and forwards requests.
+   Get a key free at https://aistudio.google.com/apikey
+   ============================================================ */
+const GEMINI_API_KEY = "AQ.Ab8RN6IhU4zljtikMmMa0WPoqtbscTNhYtrUQNgNIWfoc4suHA";
+const GEMINI_MODEL = "gemini-3.1-flash-lite"; // built for low latency — the right choice for a live chat
+const GEMINI_FALLBACK_MODEL = "gemini-flash-latest"; // more capable but slower, used only if the fast model fails
+function geminiUrl(model){ return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`; }
+
+// Retries on 503 "overloaded" errors and stale 404 model names, then falls back
+// to a second model if the first one is still failing. Any other error (bad
+// key, bad request, etc.) surfaces immediately instead of retrying. Each
+// attempt gets a hard timeout so a hung connection can't stall the chat.
+const GEMINI_TIMEOUT_MS = 10000;
+async function fetchWithTimeout(url, options){
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), GEMINI_TIMEOUT_MS);
+  try{
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function callGeminiWithRetry(payload){
+  const attempts = [
+    { model: GEMINI_MODEL, delay: 0 },
+    { model: GEMINI_MODEL, delay: 1000 },
+    { model: GEMINI_FALLBACK_MODEL, delay: 500 }
+  ];
+  let lastResp = null;
+  let lastError = null;
+  for(const a of attempts){
+    if(a.delay) await new Promise(r=>setTimeout(r, a.delay));
+    try{
+      const resp = await fetchWithTimeout(geminiUrl(a.model), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if(resp.ok) return resp;
+      lastResp = resp;
+      if(resp.status !== 503 && resp.status !== 404) break; // only keep trying on overload or a stale model name
+    } catch(err){
+      lastError = err; // network hiccup or timeout — try the next attempt
+    }
+  }
+  if(lastResp) return lastResp;
+  throw lastError || new Error('No response from the assistant after retries.');
+}
+
+let chatHistory = [];
+let chatBusy = false;
+
+/* ---------- open / close ---------- */
+function openChatAgent(){
+  document.getElementById('chatOverlay').classList.remove('hidden');
+  if(!chatHistory.length){
+    renderChatBubble('bot', "Hi! 👋 I'm the "+RESTAURANT.name+" assistant. Ask me about the menu, deals, or prices — I can add things straight to your cart too. What are you in the mood for?");
+  }
+  document.getElementById('chatInput').focus();
+}
+function closeChatAgent(){ document.getElementById('chatOverlay').classList.add('hidden'); }
+
+/* ---------- rendering ---------- */
+function renderChatBubble(role, text, id){
+  const wrap = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-bubble '+(role==='user'?'user':'bot');
+  if(id) div.id = id;
+  div.textContent = text;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return div;
+}
+function renderTypingBubble(){
+  const wrap = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-bubble bot typing';
+  div.id = 'chatTyping';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+/* ---------- build menu context for the model ---------- */
+function buildMenuContext(){
+  const cats = state.categories.map(c=>{
+    const items = state.products.filter(p=>p.categoryId===c.id && p.available!==false && !p.needsPriceReview);
+    if(!items.length) return null;
+    const lines = items.map(p=>{
+      const sizes = (p.sizes||[]).map(s=>`${s.label} ${money(s.price)}${s.toppingPrice?' (extra topping '+money(s.toppingPrice)+' ea)':''}`).join(', ');
+      return `- ${p.name}${p.description?': '+p.description:''}${sizes?' — '+sizes:' — '+money(p.price)}`;
+    }).join('\n');
+    return `${c.name}:\n${lines}`;
+  }).filter(Boolean).join('\n\n');
+
+  const deals = state.deals.map(d=>{
+    const items = (d.items||[]).map(i=>`${i.qty>1?i.qty+'x ':''}${i.label}${i.chooseFlavor?' (customer picks flavor)':''}`).join(', ');
+    return `- ${d.name}: ${money(d.price)} — includes ${items}`;
+  }).join('\n');
+
+  return `MENU\n\n${cats || 'Menu is still loading — tell the customer to hang on a moment.'}\n\nDEALS\n${deals || 'No deals currently active.'}`;
+}
+function buildSystemInstruction(){
+  return `You are the friendly, upbeat ordering assistant embedded in ${RESTAURANT.name}'s app (pizza, burgers, fried chicken).
+Help the customer decide what to order, answer questions about the menu, prices, and deals, and add items to their cart when they're ready — you do this yourself via function calls, the customer never has to leave the chat.
+
+Rules:
+- Only reference items, prices, and deals that appear in the MENU/DEALS list below. Never invent dishes or prices.
+- All prices are in Pakistani Rupees (Rs).
+- Keep replies short and conversational (2-4 sentences) like a helpful counter staff member, not a wall of text.
+- When the customer wants something ("add it", "I'll take a large pepperoni", "order me the family deal"), call add_item_to_cart or add_deal_to_cart instead of just describing it.
+- If an item has multiple sizes and the customer hasn't said which, ask before adding.
+- If a deal needs a flavor choice for one or more slots, ask which flavor(s) first, then call add_deal_to_cart with flavor_choices filled in.
+- After adding something, briefly confirm what was added and its price, then ask if they want anything else.
+- If asked for the cart or total, call get_cart_summary.
+- If the customer says they're ready to checkout / pay / place the order, call open_checkout.
+- Current order type: ${state.orderType || 'not chosen yet'}. If it's not chosen and they want to check out, mention they'll be asked to pick dine-in / takeaway / delivery next.
+- You can't process payments or see live delivery status — for order tracking, complaints, or refunds, point the customer to the Orders tab (🧾 icon) or to contact the restaurant directly.
+
+${buildMenuContext()}`;
+}
+
+/* ---------- tool declarations ---------- */
+const CHAT_TOOLS = [{
+  functionDeclarations: [
+    {
+      name: "add_item_to_cart",
+      description: "Add a single menu item (not a combo deal) to the customer's cart.",
+      parameters: {
+        type: "OBJECT",
+        properties: {
+          product_name: { type: "STRING", description: "Exact or closest matching product name from the menu." },
+          size: { type: "STRING", description: "Size label if the product has sizes, e.g. 'Small', 'Medium', 'Large'. Omit if it has no sizes." },
+          quantity: { type: "NUMBER", description: "How many to add. Defaults to 1." },
+          extra_toppings: { type: "NUMBER", description: "Number of extra toppings, only if the customer asked for extra toppings and the item supports them." }
+        },
+        required: ["product_name"]
+      }
+    },
+    {
+      name: "add_deal_to_cart",
+      description: "Add a combo/deal from the DEALS list to the customer's cart.",
+      parameters: {
+        type: "OBJECT",
+        properties: {
+          deal_name: { type: "STRING", description: "Exact or closest matching deal name." },
+          flavor_choices: {
+            type: "ARRAY",
+            description: "One entry per slot in the deal that needs a flavor choice (only slots marked 'customer picks flavor').",
+            items: {
+              type: "OBJECT",
+              properties: {
+                label: { type: "STRING", description: "The slot label from the deal, e.g. 'Pizza 1'." },
+                flavor: { type: "STRING", description: "The flavor the customer chose for that slot." }
+              }
+            }
+          }
+        },
+        required: ["deal_name"]
+      }
+    },
+    {
+      name: "get_cart_summary",
+      description: "Get the current contents and subtotal of the customer's cart.",
+      parameters: { type: "OBJECT", properties: {} }
+    },
+    {
+      name: "open_checkout",
+      description: "Open the cart/checkout screen for the customer when they say they're ready to order/pay.",
+      parameters: { type: "OBJECT", properties: {} }
+    }
+  ]
+}];
+
+/* ---------- tool execution (reuses the app's own cart/state) ---------- */
+function findProductByName(name){
+  if(!name) return null;
+  const n = name.trim().toLowerCase();
+  return state.products.find(p=>p.name.toLowerCase()===n)
+    || state.products.find(p=>p.name.toLowerCase().includes(n) || n.includes(p.name.toLowerCase()));
+}
+function findDealByName(name){
+  if(!name) return null;
+  const n = name.trim().toLowerCase();
+  return state.deals.find(d=>d.name.toLowerCase()===n)
+    || state.deals.find(d=>d.name.toLowerCase().includes(n) || n.includes(d.name.toLowerCase()));
+}
+function agentAddItemToCart(args){
+  const p = findProductByName(args.product_name);
+  if(!p) return { ok:false, message:`Couldn't find "${args.product_name}" on the menu.` };
+  if(p.available===false || p.needsPriceReview) return { ok:false, message:`${p.name} isn't available right now.` };
+  const sizes = p.sizes||[];
+  let sizeObj = null;
+  if(sizes.length){
+    sizeObj = args.size ? sizes.find(s=>s.label.toLowerCase()===String(args.size).toLowerCase()) : (sizes.length===1?sizes[0]:null);
+    if(!sizeObj) return { ok:false, needsInfo:true, message:`${p.name} comes in: ${sizes.map(s=>s.label).join(', ')}. Which size would you like?` };
+  }
+  const price = sizeObj ? sizeObj.price : p.price;
+  const tQty = Math.max(0, Math.round(Number(args.extra_toppings)||0));
+  const toppingRate = sizeObj && sizeObj.toppingPrice ? sizeObj.toppingPrice : 0;
+  const qty = Math.max(1, Math.round(Number(args.quantity)||1));
+  state.cart.push({lineId:uid8(),productId:p.id,name:p.name,size:sizeObj?sizeObj.label:null,unitPrice:price,toppingQty:tQty,toppingRate,qty,lineTotal:price+(toppingRate*tQty)});
+  saveCart();
+  toast(p.name+' added to cart');
+  return { ok:true, message:`Added ${qty}x ${p.name}${sizeObj?' ('+sizeObj.label+')':''} at ${money(price+(toppingRate*tQty))} each. Cart subtotal is now ${money(cartSubtotal())}.` };
+}
+function agentAddDealToCart(args){
+  const d = findDealByName(args.deal_name);
+  if(!d) return { ok:false, message:`Couldn't find a deal called "${args.deal_name}".` };
+  const flavorSlots = (d.items||[]).filter(i=>i.chooseFlavor);
+  const choices = args.flavor_choices||[];
+  if(flavorSlots.length && choices.length < flavorSlots.length){
+    return { ok:false, needsInfo:true, message:`This deal needs a flavor for: ${flavorSlots.map(s=>s.label).join(', ')}. Which flavors would you like?` };
+  }
+  const labelParts = (d.items||[]).map(i=>{
+    const fc = choices.find(f=>f.label===i.label);
+    return fc ? i.label+' — '+fc.flavor : i.label;
+  });
+  state.cart.push({lineId:uid8(),isDeal:true,dealId:d.id,name:d.name,size:null,unitPrice:d.price,toppingQty:0,toppingRate:0,qty:1,lineTotal:d.price,dealDetails:labelParts});
+  saveCart();
+  toast(d.name+' added to cart');
+  return { ok:true, message:`Added ${d.name} for ${money(d.price)}. Cart subtotal is now ${money(cartSubtotal())}.` };
+}
+function agentGetCartSummary(){
+  if(!state.cart.length) return { ok:true, message:'The cart is currently empty.' };
+  const lines = state.cart.map(i=>`${i.qty}x ${i.name}${i.size?' ('+i.size+')':''} — ${money(i.lineTotal*i.qty)}`);
+  return { ok:true, message:`Cart:\n${lines.join('\n')}\nSubtotal: ${money(cartSubtotal())}` };
+}
+function agentOpenCheckout(){
+  if(!state.cart.length) return { ok:false, message:"The cart is empty, so there's nothing to check out yet." };
+  closeChatAgent();
+  openCart();
+  goToCheckout();
+  return { ok:true, message:"Opened checkout — take a look below." };
+}
+function executeAgentFunction(call){
+  switch(call.name){
+    case 'add_item_to_cart': return agentAddItemToCart(call.args||{});
+    case 'add_deal_to_cart': return agentAddDealToCart(call.args||{});
+    case 'get_cart_summary': return agentGetCartSummary();
+    case 'open_checkout': return agentOpenCheckout();
+    default: return { ok:false, message:'Unknown action: '+call.name };
+  }
+}
+
+/* ---------- send / receive loop ---------- */
+function sendChatMessage(){
+  if(chatBusy) return;
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  if(!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY'){
+    renderChatBubble('bot', "The restaurant hasn't connected the assistant yet — feel free to browse the Menu and Deals tabs below in the meantime!");
+    input.value = '';
+    return;
+  }
+  input.value = '';
+  renderChatBubble('user', text);
+  chatHistory.push({ role:'user', parts:[{ text }] });
+  runAgentTurn();
+}
+async function runAgentTurn(){
+  chatBusy = true;
+  document.getElementById('chatSendBtn').disabled = true;
+  renderTypingBubble();
+  try{
+    let guard = 0;
+    while(guard++ < 5){
+      const resp = await callGeminiWithRetry({
+          contents: chatHistory,
+          systemInstruction: { parts: [{ text: buildSystemInstruction() }] },
+          tools: CHAT_TOOLS,
+          generationConfig: { temperature: 0.4, thinkingConfig: { thinkingBudget: 0 } }
+      });
+      if(!resp.ok){
+        const errBody = await resp.text().catch(()=>'');
+        console.error('Gemini error', resp.status, errBody);
+        document.getElementById('chatTyping')?.remove();
+        let detail = '';
+        try{ detail = JSON.parse(errBody).error?.message || ''; }catch(e){ detail = errBody.slice(0,200); }
+        if(resp.status === 503){
+          renderChatBubble('bot', "Google's AI servers are extremely busy right now — I tried a couple of times already. Please wait a minute and try again, or browse the Menu tab below in the meantime.");
+        } else {
+          renderChatBubble('bot', `Connection error (${resp.status}). ${detail || 'Please try again in a moment.'}\n\n— If you're the restaurant owner, screenshot this message and send it to whoever set up the assistant.`);
+        }
+        break;
+      }
+      const data = await resp.json();
+      const candidate = data.candidates && data.candidates[0];
+      const parts = (candidate && candidate.content && candidate.content.parts) || [];
+      const functionCalls = parts.filter(p=>p.functionCall).map(p=>p.functionCall);
+      const textOut = parts.filter(p=>p.text).map(p=>p.text).join('\n').trim();
+
+      chatHistory.push({ role:'model', parts });
+
+      if(functionCalls.length){
+        const responses = functionCalls.map(call=>({
+          functionResponse: { name: call.name, response: executeAgentFunction(call) }
+        }));
+        chatHistory.push({ role:'user', parts: responses });
+        continue; // let the model see the function result and respond
+      }
+      document.getElementById('chatTyping')?.remove();
+      if(textOut) renderChatBubble('bot', textOut);
+      break;
+    }
+  }catch(e){
+    console.error(e);
+    document.getElementById('chatTyping')?.remove();
+    renderChatBubble('bot', "Sorry, something went wrong. Please check your connection and try again.");
+  }
+  chatBusy = false;
+  document.getElementById('chatSendBtn').disabled = false;
 }
 </script>
 </body>
