@@ -848,7 +848,7 @@ function openMediaForm(){
     <div class="field"><label>Type</label><select id="fMediaType"><option value="image">Image</option><option value="video">Video</option></select></div>
     <div class="field"><label>Media URL</label><input id="fMediaUrl" placeholder="https://..."></div>
     <div class="field"><label>Caption (optional)</label><input id="fMediaCaption" placeholder="e.g. New Bihari Kebab Pizza is here!"></div>
-    <p class="muted">🧪 For now, paste a link to an already-hosted photo/video. Direct file upload arrives once Firebase Storage is connected.</p>
+    <p class="muted">🧪 Paste a link to an already-hosted photo, a direct video file (.mp4), or a YouTube link — YouTube links now embed automatically.</p>
   `;
   document.getElementById('formSaveBtn').onclick = ()=>{
     const url = document.getElementById('fMediaUrl').value.trim();

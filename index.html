@@ -738,10 +738,32 @@ function submitReservation(){
 /* ============================================================
    PROMOS
    ============================================================ */
+function getYouTubeEmbedUrl(url){
+  if(!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
+  ];
+  for(const p of patterns){
+    const match = url.match(p);
+    if(match) return `https://www.youtube.com/embed/${match[1]}`;
+  }
+  return null;
+}
 function renderPromos(){
   const list = document.getElementById('promoList');
   if(!state.media.length){ list.innerHTML = `<div class="empty-state"><div class="ee">🎬</div><h3>Nothing posted yet</h3><p>Our latest photos and videos will show up here once the owner uploads them from the Admin Panel.</p></div>`; return; }
-  list.innerHTML = state.media.map(m=>`<div class="promo-card">${m.type==='video'?`<video src="${m.url}" controls playsinline></video>`:`<img src="${m.url}" loading="lazy">`}${m.caption?`<div class="promo-cap">${m.caption}</div>`:''}</div>`).join('');
+  list.innerHTML = state.media.map(m=>{
+    let mediaHtml;
+    const ytEmbed = m.type==='video' ? getYouTubeEmbedUrl(m.url) : null;
+    if(ytEmbed){
+      mediaHtml = `<div style="position:relative;padding-top:56.25%"><iframe src="${ytEmbed}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+    } else if(m.type==='video'){
+      mediaHtml = `<video src="${m.url}" controls playsinline></video>`;
+    } else {
+      mediaHtml = `<img src="${m.url}" loading="lazy">`;
+    }
+    return `<div class="promo-card">${mediaHtml}${m.caption?`<div class="promo-cap">${m.caption}</div>`:''}</div>`;
+  }).join('');
 }
 
 /* ============================================================
