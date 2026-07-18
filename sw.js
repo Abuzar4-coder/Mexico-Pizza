@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mexico-pizza-v5';
+const CACHE_NAME = 'mexico-pizza-v4';
 const SHELL_FILES = [
   './index.html',
   './admin.html',
@@ -29,8 +29,8 @@ self.addEventListener('activate', (event) => {
 // Network-first for Firebase calls (never cache live data), cache-first for the app shell.
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
-  if (url.includes('firestore.googleapis.com') || url.includes('firebasestorage') || url.includes('identitytoolkit') || url.includes('firebaseio.com') || url.includes('google.com') || url.includes('generativelanguage.googleapis.com')) {
-    return; // always go straight to the network for live data, auth, and the AI assistant — never cache it
+  if (url.includes('firestore.googleapis.com') || url.includes('firebasestorage') || url.includes('identitytoolkit') || url.includes('firebaseio.com') || url.includes('google.com')) {
+    return; // always go straight to the network for live data and auth, never cache it
   }
   event.respondWith(
     caches.match(event.request).then((cached) => {
